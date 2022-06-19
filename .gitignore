@@ -1,3 +1,5 @@
 config.py
 ./discord.py/*
 discord.py/
+*.pyc
+netero.log

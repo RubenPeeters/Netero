@@ -3,8 +3,14 @@ from discord.ext import commands
 import traceback
 import logging
 import config
+import sys
 
 log = logging.getLogger(__name__)
+
+startup_cogs = [
+    # 'cogs.images',
+    'cogs.stats',
+]
 
 
 class Netero(commands.Bot):
@@ -31,11 +37,10 @@ class Netero(commands.Bot):
         super().__init__(
             command_prefix='!',
             description='Ruben Peeters personal discord bot',
-            heartbeat_timeout=150.0,
             intents=intents,
             enable_debug_events=True,
         )
-
+        self.blacklist = []
         self.client_id: str = config.client_id
 
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError) -> None:
@@ -56,6 +61,13 @@ class Netero(commands.Bot):
     async def on_ready(self):
         if not hasattr(self, 'uptime'):
             self.uptime = discord.utils.utcnow()
+
+        for cog in startup_cogs:
+            try:
+                await self.load_extension(cog)
+            except Exception as e:
+                print(f'Failed to load cog {cog}.', file=sys.stderr)
+                traceback.print_exc()
 
         print(f'Ready: {self.user} (ID: {self.user.id})')
 

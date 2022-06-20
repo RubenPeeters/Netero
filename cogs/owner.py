@@ -13,11 +13,15 @@ import sys
 import copy
 import time
 import subprocess
-from typing import Union, Optional
+import config
+from .utils.context import Context
+from typing import Literal, Union, Optional
 
 # to expose to the eval command
 import datetime
 from collections import Counter
+
+MY_GUILD = discord.Object(id=config.owner_guild)
 
 
 class GlobalChannel(commands.Converter):
@@ -47,6 +51,9 @@ class Owner(commands.Cog):
         self._last_result = None
         self.sessions = set()
 
+    async def cog_check(self, ctx: Context) -> bool:
+        return await self.bot.is_owner(ctx.author)
+
     async def run_process(self, command):
         try:
             process = await asyncio.create_subprocess_shell(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -57,6 +64,31 @@ class Owner(commands.Cog):
             result = await self.bot.loop.run_in_executor(None, process.communicate)
 
         return [output.decode() for output in result]
+
+    @commands.command(hidden=True)
+    async def sync(self, ctx: Context, guilds: commands.Greedy[discord.Object], spec: Optional[Literal["~"]] = None) -> None:
+        if not guilds:
+            if spec == "~":
+                fmt = await ctx.bot.tree.sync(guild=ctx.guild)
+            else:
+                fmt = await ctx.bot.tree.sync()
+
+            await ctx.send(
+                f"Synced {len(fmt)} commands {'globally' if spec is not None else 'to the current guild.'}"
+            )
+            return
+
+        assert guilds is not None
+        fmt = 0
+        for guild in guilds:
+            try:
+                await ctx.bot.tree.sync(guild=guild)
+            except discord.HTTPException:
+                pass
+            else:
+                fmt += 1
+
+        await ctx.send(f"Synced the tree to {fmt}/{len(guilds)} guilds.")
 
     @commands.command(hidden=True)
     async def load(self, ctx, *, module):

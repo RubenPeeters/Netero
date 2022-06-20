@@ -1,8 +1,14 @@
+import aiohttp
 from bot import Netero
 import contextlib
 import logging
 import click
 import asyncio
+import sys
+
+import config
+
+from cogs.utils.db import Table
 
 from logging.handlers import RotatingFileHandler
 
@@ -53,14 +59,25 @@ async def start():
         'max_size': 20,
         'min_size': 20,
     }
+    try:
+        pool = await Table.create_pool(config.postgresql, **kwargs)
+    except Exception as e:
+        click.echo('Could not set up PostgreSQL. Exiting.', file=sys.stderr)
+        log.exception('Could not set up PostgreSQL. Exiting.')
+        return
 
     bot = Netero()
-    await bot.start()
+    bot.pool = pool
+    # discord.py 2.0
+    async with aiohttp.ClientSession() as session:
+        async with bot:
+            bot.session = session
+            await bot.start()
 
 
 @click.group(invoke_without_command=True, options_metavar='[options]')
 @click.pass_context
-def default_start(ctx):
+def main(ctx):
     """Launches the bot."""
     if ctx.invoked_subcommand is None:
         with setup_logging():
@@ -68,4 +85,4 @@ def default_start(ctx):
 
 
 if __name__ == '__main__':
-    default_start()
+    main()

@@ -1,15 +1,20 @@
 import discord
 from discord.ext import commands
+from cogs.utils import context
 import traceback
 import logging
 import config
 import sys
+
+import aiohttp
+import asyncpg
 
 log = logging.getLogger(__name__)
 
 startup_cogs = [
     # 'cogs.images',
     'cogs.stats',
+    'cogs.owner'
 ]
 
 
@@ -36,10 +41,11 @@ class Netero(commands.Bot):
         )
         super().__init__(
             command_prefix='!',
-            description='Ruben Peeters personal discord bot',
+            description='Multi-functional personal slave',
             intents=intents,
             enable_debug_events=True,
         )
+        self.session = aiohttp.ClientSession()
         self.blacklist = []
         self.client_id: str = config.client_id
 
@@ -72,7 +78,7 @@ class Netero(commands.Bot):
         print(f'Ready: {self.user} (ID: {self.user.id})')
 
     async def process_commands(self, message: discord.Message):
-        ctx = await self.get_context(message)
+        ctx = await self.get_context(message, cls=context.Context)
 
         if ctx.command is None:
             return

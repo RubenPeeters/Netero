@@ -5,6 +5,7 @@ from discord import app_commands
 
 
 from .utils import time
+from .views.button import TestButton
 
 
 class Stats(commands.Cog):
@@ -27,7 +28,7 @@ class Stats(commands.Cog):
     async def ui(self, interaction):
         """Discord UI testing."""
         view = discord.ui.View()
-        button = self.test_button()
+        button = TestButton(self.bot)
         input = discord.ui.TextInput(label="Test input")
         options = discord.SelectOption(label='Test 1', value='test-1')
         select = discord.ui.Select(options=[options])

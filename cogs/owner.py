@@ -66,29 +66,18 @@ class Owner(commands.Cog):
         return [output.decode() for output in result]
 
     @commands.command(hidden=True)
-    async def sync(self, ctx: Context, guilds: commands.Greedy[discord.Object], spec: Optional[Literal["~"]] = None) -> None:
-        if not guilds:
+    async def sync(self, ctx: Context, spec: str = None) -> None:
+        async with ctx.typing():
             if spec == "~":
-                fmt = await ctx.bot.tree.sync(guild=ctx.guild)
+                fmt = await ctx.bot.tree.sync(guild=MY_GUILD)
+                print('done')
             else:
                 fmt = await ctx.bot.tree.sync()
-
+                print('done')
+            print(fmt)
             await ctx.send(
-                f"Synced {len(fmt)} commands {'globally' if spec is not None else 'to the current guild.'}"
+                f"Synced {len(fmt)} commands {'globally' if spec is None else 'to the current guild.'}"
             )
-            return
-
-        assert guilds is not None
-        fmt = 0
-        for guild in guilds:
-            try:
-                await ctx.bot.tree.sync(guild=guild)
-            except discord.HTTPException:
-                pass
-            else:
-                fmt += 1
-
-        await ctx.send(f"Synced the tree to {fmt}/{len(guilds)} guilds.")
 
     @commands.command(hidden=True)
     async def load(self, ctx, *, module):
@@ -214,6 +203,10 @@ class Owner(commands.Cog):
 
         for i in range(times):
             await new_ctx.reinvoke()
+
+    @commands.command()
+    async def get_app_commands(self, ctx):
+        print(await self.bot.tree.fetch_commands())
 
 
 async def setup(bot):

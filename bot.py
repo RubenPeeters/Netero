@@ -103,9 +103,6 @@ class Netero(commands.Bot):
         if guild.id in self.blacklist:
             await guild.leave()
 
-    async def start(self) -> None:
-        await super().start(config.token, reconnect=True)
-
     async def close(self) -> None:
         await super().close()
         await self.session.close()

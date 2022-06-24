@@ -87,7 +87,7 @@ class Owner(commands.Cog):
         except commands.ExtensionError as e:
             await ctx.send(f'{e.__class__.__name__}: {e}')
         else:
-            await ctx.send('\N{OK HAND SIGN}')
+            await ctx.send('```ini\n[INFO] Looks like that worked, boss 👌```')
 
     @commands.command(hidden=True)
     async def unload(self, ctx, *, module):
@@ -97,7 +97,7 @@ class Owner(commands.Cog):
         except commands.ExtensionError as e:
             await ctx.send(f'{e.__class__.__name__}: {e}')
         else:
-            await ctx.send('\N{OK HAND SIGN}')
+            await ctx.send('```ini\n[INFO] Looks like that worked, boss 👌```')
 
     @commands.group(name='reload', hidden=True, invoke_without_command=True)
     async def _reload(self, ctx, *, module):
@@ -107,7 +107,7 @@ class Owner(commands.Cog):
         except commands.ExtensionError as e:
             await ctx.send(f'{e.__class__.__name__}: {e}')
         else:
-            await ctx.send('\N{OK HAND SIGN}')
+            await ctx.send('```ini\n[INFO] Looks like that worked, boss 👌```')
 
     _GIT_PULL_REGEX = re.compile(r'\s*(?P<filename>.+?)\s*\|\s*[0-9]+\s*[+-]+')
 
@@ -204,7 +204,7 @@ class Owner(commands.Cog):
         for i in range(times):
             await new_ctx.reinvoke()
 
-    @commands.command()
+    @commands.command(hidden=True)
     async def get_app_commands(self, ctx):
         print(await self.bot.tree.fetch_commands())
 

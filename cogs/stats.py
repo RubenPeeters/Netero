@@ -5,6 +5,7 @@ from discord import app_commands
 
 
 from .utils import time
+from .utils.embed import FooterEmbed
 from .views.button import TestButton
 
 
@@ -37,12 +38,7 @@ class Stats(commands.Cog):
     async def stats(self, interaction):
         """Tells you information about the bot itself."""
         try:
-            owner = self.bot.get_user(self.bot.owner_id)
-            embed = discord.Embed(color=discord.Colour(0xda9f31))
-            print(owner.color)
-            print(owner.accent_color)
-            embed.set_author(
-                name=str(owner), icon_url=owner.display_avatar.url)
+            embed = FooterEmbed(self.bot)
 
             # statistics
             total_members = sum(1 for _ in self.bot.get_all_members())
@@ -61,15 +57,13 @@ class Stats(commands.Cog):
             payload = f' \
             `{"Members":8}:` {total_members:16d}\n \
             `{"Channels":8}:` {text + voice:16d}\n \
-            `{"Guilds":8}:` {str(len(self.bot.guilds)):16}\n \
+            `{"Servers":8}:` {str(len(self.bot.guilds)):16}\n \
             `{"Uptime":8}:` {self.get_bot_uptime(brief=True):16}\n \
             '
             embed.set_thumbnail(
-                url='https://github.com/RubenPeeters/Netero/blob/main/cogs/assets/netero_profile.jpg?raw=true')
+                url='https://github.com/RubenPeeters/Netero/blob/main/cogs/assets/netero_thumbnail.jpg?raw=true')
             embed.add_field(
                 name='\u200b', value=payload)
-            embed.set_footer(
-                text='Made with discord.py', icon_url=self.bot.user.display_avatar.url)
             await interaction.response.send_message(embed=embed)
         except Exception as e:
             await interaction.response.send_message('{}: {}'.format(type(e).__name__, e))

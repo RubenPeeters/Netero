@@ -32,6 +32,10 @@ def setup_logging():
             '[{asctime}] [{levelname:<7}] {name}: {message}', dt_fmt, style='{')
         handler.setFormatter(fmt)
         log.addHandler(handler)
+        _stdout = logging.StreamHandler()
+        _stdout.setLevel(logging.INFO)
+        _stdout.setFormatter(fmt)
+        log.addHandler(_stdout)
 
         yield
     finally:

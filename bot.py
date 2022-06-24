@@ -12,17 +12,14 @@ import asyncpg
 log = logging.getLogger(__name__)
 
 startup_cogs = [
-    # 'cogs.images',
+    'cogs.league',
     'cogs.stats',
-    'cogs.owner'
+    'cogs.owner',
+    'cogs.info'
 ]
 
 
 class Netero(commands.Bot):
-
-    @property
-    def owner(self) -> discord.User:
-        return self.bot_app_info.owner
 
     @property
     def config(self):
@@ -48,11 +45,13 @@ class Netero(commands.Bot):
         self.blacklist = []
         self.client_id: str = config.client_id
         self.owner_id: int = 150907968068648960
+        self.color = discord.Colour(0xda9f31)
 
     async def setup_hook(self):
         for cog in startup_cogs:
             try:
                 await self.load_extension(cog)
+                print(f'{cog.capitalize()} is loaded succesfully.')
             except Exception as e:
                 print(f'Failed to load cog {cog}.', file=sys.stderr)
                 traceback.print_exc()

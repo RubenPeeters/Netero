@@ -1,5 +1,7 @@
+from typing import Optional
 from idna import valid_contexto
 from cogs.owner import MY_GUILD
+from cogs.utils.help import PaginatedHelpCommand
 import discord
 from discord.ext import commands
 from discord import app_commands
@@ -45,23 +47,24 @@ class Info(commands.Cog):
         '''Show information on the current server'''
         try:
             server = interaction.guild
-            roles = [x.name for x in server.roles]
+            roles = [x.mention for x in server.roles]
             role_length = len(roles)
-            if role_length > 50:
-                roles = roles[:50]
-                roles.append('... [50/%s] roles' % role_length)
+            roles.reverse()
+            if role_length > 20:
+                roles = roles[:20]
+                roles.append('... [20/%s] roles' % role_length)
             roles = ', '.join(roles)
             channelz = len(server.channels)
-            join = FooterEmbed(self.bot, description='%s ' % (
-                str(server)), title='Server name', colour=self.bot.color)
+            join = FooterEmbed(self.bot, title=str(
+                server), colour=self.bot.color)
             join.set_thumbnail(url=server.icon.url)
-            join.add_field(name=' __Owner__', value=str(
+            join.add_field(name='Owner', value=str(
                 server.owner), inline=False)
-            join.add_field(name='__Members__', value=str(
+            join.add_field(name='Members', value=str(
                 server.member_count), inline=False)
             join.add_field(
-                name='__Channels__', value=str(channelz), inline=False)
-            join.add_field(name=' __Roles__', value=roles, inline=False)
+                name='Channels', value=str(channelz), inline=False)
+            join.add_field(name=' Roles', value=roles, inline=False)
             await interaction.response.send_message(embed=join)
         except Exception as e:
             exc = "{}: {}".format(type(e).__name__, e)

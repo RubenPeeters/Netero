@@ -51,9 +51,9 @@ class Netero(commands.Bot):
         for cog in startup_cogs:
             try:
                 await self.load_extension(cog)
-                print(f'{cog.capitalize()} is loaded succesfully.')
+                log.info(f'{cog} is loaded succesfully.')
             except Exception as e:
-                print(f'Failed to load cog {cog}.', file=sys.stderr)
+                log.warn(f'Failed to load {cog}.')
                 traceback.print_exc()
 
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError) -> None:
@@ -75,7 +75,7 @@ class Netero(commands.Bot):
         if not hasattr(self, 'uptime'):
             self.uptime = discord.utils.utcnow()
 
-        print(f'Ready: {self.user} (ID: {self.user.id})')
+        log.info(f'Ready: {self.user} (ID: {self.user.id})')
 
     async def process_commands(self, message: discord.Message):
         ctx = await self.get_context(message, cls=context.Context)

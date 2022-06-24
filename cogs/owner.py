@@ -14,6 +14,8 @@ import copy
 import time
 import subprocess
 import config
+from discord.ext.commands.converter import Greedy
+from discord.object import Object
 from .utils.context import Context
 from typing import Literal, Union, Optional
 
@@ -66,18 +68,31 @@ class Owner(commands.Cog):
         return [output.decode() for output in result]
 
     @commands.command(hidden=True)
-    async def sync(self, ctx: Context, spec: str = None) -> None:
+    async def sync(self, ctx: Context, guilds: Greedy[Object], spec: Optional[Literal["~", "*"]] = None) -> None:
         async with ctx.typing():
-            if spec == "~":
-                fmt = await ctx.bot.tree.sync(guild=MY_GUILD)
-                print('done')
-            else:
-                fmt = await ctx.bot.tree.sync()
-                print('done')
-            print(fmt)
-            await ctx.send(
-                f"Synced {len(fmt)} commands {'globally' if spec is None else 'to the current guild.'}"
-            )
+            if not guilds:
+                if spec == "~":
+                    fmt = await ctx.bot.tree.sync(guild=ctx.guild)
+                elif spec == "*":
+                    ctx.bot.tree.copy_global_to(guild=ctx.guild)
+                    fmt = await ctx.bot.tree.sync(guild=ctx.guild)
+                else:
+                    fmt = await ctx.bot.tree.sync()
+
+                await ctx.send(
+                    f"Synced {len(fmt)} commands {'globally' if spec is None else 'to the current guild.'}"
+                )
+                return
+
+            fmt = 0
+            for guild in guilds:
+                try:
+                    await ctx.bot.tree.sync(guild=guild)
+                except discord.HTTPException:
+                    pass
+                else:
+                    fmt += 1
+            await ctx.send(f"Synced the tree to {fmt}/{len(guilds)} guilds.")
 
     @commands.command(hidden=True)
     async def load(self, ctx, *, module):

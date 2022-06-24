@@ -3,6 +3,7 @@ from idna import valid_contexto
 from cogs.owner import MY_GUILD
 from cogs.utils.help import PaginatedHelpCommand
 import discord
+from discord.app_commands.commands import describe
 from discord.ext import commands
 from discord import app_commands
 
@@ -13,14 +14,28 @@ from .views.button import TestButton
 
 
 class Info(commands.Cog):
+    """Information on the bot, the server, ..."""
+
     def __init__(self, bot: commands.Bot) -> None:
         self.bot: commands.Bot = bot
+        self.old_help_command: Optional[commands.HelpCommand] = bot.help_command
+        bot.help_command = PaginatedHelpCommand()
+        bot.help_command.cog = self
 
-    info = app_commands.Group(
-        name="info", description='Info on the bot, servers or users.')
+    @property
+    def display_emoji(self) -> discord.PartialEmoji:
+        return discord.PartialEmoji(name='📓')
+
+    @commands.hybrid_group(invoke_without_command=False)
+    async def info(self, ctx):
+        """General info commands"""
+        pass
+
+    def cog_unload(self):
+        self.bot.help_command = self.old_help_command
 
     @info.command()
-    async def bot(self, interaction):
+    async def bot(self, ctx):
         '''Show information on the bot itself'''
         try:
             me = self.bot.get_user(self.bot.owner_id)
@@ -36,17 +51,20 @@ class Info(commands.Cog):
                 url='https://github.com/RubenPeeters/Netero/blob/main/cogs/assets/netero_profile.jpg?raw=true')
             embed.add_field(
                 name="Donations", value="These are a great incentive for me to keep working on the bot. If you enjoy Netero, consider supporting its development by donating [here.](https://paypal.me/Itachibot)")
-            await interaction.response.send_message(embed=embed)
+            await ctx.send(embed=embed)
         except Exception as e:
             exc = "{}: {}".format(type(e).__name__, e)
             print('Failed to send embed\n{}'.format(exc))
 
     @info.command()
-    @app_commands.guild_only()
-    async def server(self, interaction):
+    async def server(self, ctx):
         '''Show information on the current server'''
         try:
-            server = interaction.guild
+            server = ctx.guild
+            if server is None:
+                join = FooterEmbed(
+                    self.bot, title='Whoops...', colour=self.bot.color, description='This can only be used in a server.')
+                await ctx.send(embed=join)
             roles = [x.mention for x in server.roles]
             role_length = len(roles)
             roles.reverse()
@@ -65,7 +83,7 @@ class Info(commands.Cog):
             join.add_field(
                 name='Channels', value=str(channelz), inline=False)
             join.add_field(name=' Roles', value=roles, inline=False)
-            await interaction.response.send_message(embed=join)
+            await ctx.send(embed=join)
         except Exception as e:
             exc = "{}: {}".format(type(e).__name__, e)
             print('Failed to send embed\n{}'.format(exc))

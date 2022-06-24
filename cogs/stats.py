@@ -10,19 +10,25 @@ from .views.button import TestButton
 
 
 class Stats(commands.Cog):
+    """Statistics about the bot and its usage."""
+
     def __init__(self, bot: commands.Bot) -> None:
         self.bot: commands.Bot = bot
+
+    @property
+    def display_emoji(self) -> discord.PartialEmoji:
+        return discord.PartialEmoji(name='💻')
 
     def get_bot_uptime(self, *, brief=False):
         return time.human_timedelta(self.bot.uptime, accuracy=None, brief=brief, suffix=False)
 
-    @app_commands.command(name="uptime")
-    async def uptime(self, interaction):
+    @commands.hybrid_command(name="uptime")
+    async def uptime(self, ctx):
         """Tells you how long the bot has been up for."""
-        await interaction.response.send_message(content=f'Uptime: **{self.get_bot_uptime()}**')
+        await ctx.send(content=f'Uptime: **{self.get_bot_uptime()}**')
 
-    @app_commands.command(name="ui")
-    async def ui(self, interaction):
+    @commands.hybrid_command(name="ui")
+    async def ui(self, ctx):
         """Discord UI testing."""
         view = discord.ui.View()
         button = TestButton(self.bot)
@@ -32,10 +38,10 @@ class Stats(commands.Cog):
         view.add_item(button)
         # view.add_item(input)
         # view.add_item(select)
-        await interaction.response.send_message(content=f'Test message', view=view)
+        await ctx.send(content=f'Test message', view=view)
 
-    @app_commands.command(name="stats")
-    async def stats(self, interaction):
+    @commands.hybrid_command(name="stats")
+    async def stats(self, ctx):
         """Tells you information about the bot itself."""
         try:
             embed = FooterEmbed(self.bot)
@@ -64,9 +70,9 @@ class Stats(commands.Cog):
                 url='https://github.com/RubenPeeters/Netero/blob/main/cogs/assets/netero_thumbnail.jpg?raw=true')
             embed.add_field(
                 name='\u200b', value=payload)
-            await interaction.response.send_message(embed=embed)
+            await ctx.send(embed=embed)
         except Exception as e:
-            await interaction.response.send_message('{}: {}'.format(type(e).__name__, e))
+            await ctx.send('{}: {}'.format(type(e).__name__, e))
 
 
 async def setup(bot):

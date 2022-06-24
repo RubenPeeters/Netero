@@ -38,8 +38,9 @@ class Stats(commands.Cog):
         """Tells you information about the bot itself."""
         try:
             owner = self.bot.get_user(self.bot.owner_id)
-            embed = discord.Embed(color=owner.color)
-
+            embed = discord.Embed(color=discord.Colour(0xda9f31))
+            print(owner.color)
+            print(owner.accent_color)
             embed.set_author(
                 name=str(owner), icon_url=owner.display_avatar.url)
 
@@ -58,12 +59,13 @@ class Stats(commands.Cog):
             text = len(text_channels)
             voice = len(voice_channels)
             payload = f' \
-            `Members:` {total_members}\n \
-            `Channels:` {text + voice}\n \
-            `Guilds:` {str(len(self.bot.guilds))}\n \
-            `Uptime:` {self.get_bot_uptime(brief=True)}\n \
+            `{"Members":8}:` {total_members:16d}\n \
+            `{"Channels":8}:` {text + voice:16d}\n \
+            `{"Guilds":8}:` {str(len(self.bot.guilds)):16}\n \
+            `{"Uptime":8}:` {self.get_bot_uptime(brief=True):16}\n \
             '
-            embed.set_thumbnail(url='../assets/netero_thumbnail.jpg')
+            embed.set_thumbnail(
+                url='https://github.com/RubenPeeters/Netero/blob/main/cogs/assets/netero_profile.jpg?raw=true')
             embed.add_field(
                 name='\u200b', value=payload)
             embed.set_footer(

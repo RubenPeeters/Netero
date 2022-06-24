@@ -25,7 +25,7 @@ class _ContextDBAcquire:
 class Context(commands.Context):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        # self.pool = self.bot.pool
+        self.pool = self.bot.pool
         self._db = None
 
     async def entry_to_code(self, entries):

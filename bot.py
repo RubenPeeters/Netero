@@ -47,6 +47,7 @@ class Netero(commands.Bot):
         )
         self.blacklist = []
         self.client_id: str = config.client_id
+        self.owner_id: int = 150907968068648960
 
     async def setup_hook(self):
         for cog in startup_cogs:

@@ -41,10 +41,15 @@ class GroupHelpPageSource(menus.ListPageSource):
             title=self.title, description=self.description, colour=discord.Colour(0xda9f31))
 
         for command in commands:
-            signature = f'{command.qualified_name} {command.signature}'
-            embed.add_field(
-                name=f'**{signature}**', value=f'```{command.short_doc or "No help given..."}```', inline=False)
-
+            if isinstance(command, discord.ext.commands.hybrid.HybridGroup):
+                for subcommand in command.commands:
+                    signature = f'{subcommand.qualified_name} {subcommand.signature}'
+                    embed.add_field(
+                        name=f'**{signature}**', value=f'```{subcommand.short_doc or "No help given..."}```', inline=False)
+            else:
+                signature = f'{command.qualified_name} {command.signature}'
+                embed.add_field(
+                    name=f'**{signature}**', value=f'```{command.short_doc or "No help given..."}```', inline=False)
         maximum = self.get_max_pages()
         if maximum > 1:
             embed.set_author(
@@ -240,6 +245,7 @@ class PaginatedHelpCommand(commands.HelpCommand):
 
     async def send_cog_help(self, cog):
         entries = await self.filter_commands(cog.get_commands(), sort=True)
+
         menu = HelpMenu(GroupHelpPageSource(
             cog, entries, prefix=self.context.clean_prefix), ctx=self.context)
         await self.context.release()

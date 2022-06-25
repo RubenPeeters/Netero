@@ -23,7 +23,7 @@ class Stats(commands.Cog):
         """Tells you how long the bot has been up for."""
         await ctx.send(content=f'Uptime: **{self.get_bot_uptime()}**')
 
-    @commands.hybrid_command(name="ui")
+    @commands.hybrid_command(name="ui", hidden=True)
     async def ui(self, ctx):
         """Discord UI testing."""
         view = discord.ui.View()

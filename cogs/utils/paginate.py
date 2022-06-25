@@ -42,14 +42,14 @@ class RoboPages(discord.ui.View):
             if use_last_and_first:
                 self.add_item(self.go_to_first_page)
             self.add_item(self.go_to_previous_page)
-            if not self.compact:
-                self.add_item(self.go_to_current_page)
+            self.add_item(self.go_to_current_page)
             self.add_item(self.go_to_next_page)
             if use_last_and_first:
                 self.add_item(self.go_to_last_page)
             if not self.compact:
                 self.add_item(self.numbered_page)
-            self.add_item(self.stop_pages)
+            if not self.compact:
+                self.add_item(self.stop_pages)
 
     async def _get_kwargs_from_page(self, page: int) -> Dict[str, Any]:
         value = await discord.utils.maybe_coroutine(self.source.format_page, self, page)
@@ -76,14 +76,14 @@ class RoboPages(discord.ui.View):
 
     def _update_labels(self, page_number: int) -> None:
         self.go_to_first_page.disabled = page_number == 0
-        if self.compact:
-            max_pages = self.source.get_max_pages()
-            self.go_to_last_page.disabled = max_pages is None or (
-                page_number + 1) >= max_pages
-            self.go_to_next_page.disabled = max_pages is not None and (
-                page_number + 1) >= max_pages
-            self.go_to_previous_page.disabled = page_number == 0
-            return
+        # if self.compact:
+        #     max_pages = self.source.get_max_pages()
+        #     self.go_to_last_page.disabled = max_pages is None or (
+        #         page_number + 1) >= max_pages
+        #     self.go_to_next_page.disabled = max_pages is not None and (
+        #         page_number + 1) >= max_pages
+        #     self.go_to_previous_page.disabled = page_number == 0
+        #     return
 
         self.go_to_current_page.label = str(page_number + 1)
         self.go_to_previous_page.label = str(page_number)
@@ -145,26 +145,26 @@ class RoboPages(discord.ui.View):
         self._update_labels(0)
         self.message = await self.ctx.send(**kwargs, view=self)
 
-    @discord.ui.button(label='≪', style=discord.ButtonStyle.grey)
+    @discord.ui.button(label='≪', style=discord.ButtonStyle.green)
     async def go_to_first_page(self, interaction: discord.Interaction, button: discord.ui.Button):
         """go to the first page"""
         await self.show_page(interaction, 0)
 
-    @discord.ui.button(label='Back', style=discord.ButtonStyle.blurple)
+    @discord.ui.button(label='Back', style=discord.ButtonStyle.gray)
     async def go_to_previous_page(self, interaction: discord.Interaction, button: discord.ui.Button):
         """go to the previous page"""
         await self.show_checked_page(interaction, self.current_page - 1)
 
-    @discord.ui.button(label='Current', style=discord.ButtonStyle.grey, disabled=True)
+    @discord.ui.button(label='Current', style=discord.ButtonStyle.gray, disabled=True)
     async def go_to_current_page(self, interaction: discord.Interaction, button: discord.ui.Button):
         pass
 
-    @discord.ui.button(label='Next', style=discord.ButtonStyle.blurple)
+    @discord.ui.button(label='Next', style=discord.ButtonStyle.gray)
     async def go_to_next_page(self, interaction: discord.Interaction, button: discord.ui.Button):
         """go to the next page"""
         await self.show_checked_page(interaction, self.current_page + 1)
 
-    @discord.ui.button(label='≫', style=discord.ButtonStyle.grey)
+    @discord.ui.button(label='≫', style=discord.ButtonStyle.green)
     async def go_to_last_page(self, interaction: discord.Interaction, button: discord.ui.Button):
         """go to the last page"""
         # The call here is safe because it's guarded by skip_if

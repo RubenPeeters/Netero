@@ -33,7 +33,7 @@ class GroupHelpPageSource(menus.ListPageSource):
         super().__init__(entries=commands, per_page=6)
         self.group: Union[commands.Group, commands.Cog] = group
         self.prefix: str = prefix
-        self.title: str = f'{self.group.qualified_name} Commands'
+        self.title: str = f'{self.group.qualified_name.upper()}'
         self.description: str = self.group.description
 
     async def format_page(self, menu: RoboPages, commands: list[commands.Command]):
@@ -43,13 +43,14 @@ class GroupHelpPageSource(menus.ListPageSource):
         for command in commands:
             signature = f'{command.qualified_name} {command.signature}'
             embed.add_field(
-                name=signature, value=command.short_doc or 'No help given...', inline=False)
+                name=f'**{signature}**', value=f'```{command.short_doc or "No help given..."}```', inline=False)
 
         maximum = self.get_max_pages()
         if maximum > 1:
             embed.set_author(
-                name=f'Page {menu.current_page + 1}/{maximum} ({len(self.entries)} commands)')
-
+                name=f'Page {menu.current_page + 1}/{maximum} ({len(self.entries)} COMMANDS)')
+        embed.set_thumbnail(
+            url='https://github.com/RubenPeeters/Netero/blob/main/cogs/assets/netero_thumbnail.jpg?raw=true')
         embed.set_footer(
             text=f'Use "{self.prefix}help command" for more info on a command.')
         return embed
@@ -69,8 +70,7 @@ class HelpSelectMenu(discord.ui.Select['HelpMenu']):
 
     def __fill_options(self) -> None:
         self.add_option(
-            label='Home',
-            emoji='🏠',
+            label='home',
             value='__index',
             description='The help page showing how to use the bot.',
         )
@@ -78,8 +78,8 @@ class HelpSelectMenu(discord.ui.Select['HelpMenu']):
             if not commands:
                 continue
             description = cog.description.split('\n', 1)[0] or None
-            emoji = getattr(cog, 'display_emoji', None)
-            self.add_option(label=cog.qualified_name, value=cog.qualified_name,
+            emoji = None
+            self.add_option(label=cog.qualified_name.lower(), value=cog.qualified_name,
                             description=description, emoji=emoji)
 
     async def callback(self, interaction: discord.Interaction):
@@ -120,17 +120,27 @@ class FrontPageSource(menus.PageSource):
 
     def format_page(self, menu: HelpMenu, page: Any):
         embed = discord.Embed(
-            title='Help', colour=discord.Colour(0xda9f31))
+            title='Need some help?', colour=discord.Colour(0xda9f31))
         embed.description = inspect.cleandoc(
-            f"""
-            Use "{menu.ctx.clean_prefix}help command" for more info on a command.
-            Use "{menu.ctx.clean_prefix}help category" for more info on a category.
-            Use the dropdown menu below to select a category.
-        """
+            f"""Not used to slash commands? Can't immediately find what you're looking for?"""
+            """Try the `dropdown menu` below for help with specific commands or go to the `next page`"""
+            """for some extra general explanations. If that doesn't help, join the [support server](https://discord.gg/2XfmHUH) below and ask me :)."""
         )
+        embed.set_thumbnail(
+            url='https://github.com/RubenPeeters/Netero/blob/main/cogs/assets/netero_thumbnail.jpg?raw=true')
         if self.index == 0:
-            pass
+            embed.add_field(name="Support server",
+                            value="[Join here](https://discord.gg/2XfmHUH)", inline=False)
+            embed.add_field(
+                name="Donations", value="These are a great incentive for me to keep working on the bot. If you enjoy Netero, consider supporting its development by donating [here.](https://paypal.me/Itachibot)")
         elif self.index == 1:
+            embed.description = inspect.cleandoc(
+                f"""
+                Use "{menu.ctx.clean_prefix}help command" for more info on a command.
+                Use "{menu.ctx.clean_prefix}help category" for more info on a category.
+                Use the dropdown menu below to select a category.
+                """
+            )
             entries = (
                 ('<argument>', 'This means the argument is __**required**__.'),
                 ('[argument]', 'This means the argument is __**optional**__.'),

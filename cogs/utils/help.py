@@ -52,7 +52,7 @@ class GroupHelpPageSource(menus.ListPageSource):
         embed.set_thumbnail(
             url='https://github.com/RubenPeeters/Netero/blob/main/cogs/assets/netero_thumbnail.jpg?raw=true')
         embed.set_footer(
-            text=f'Use "{self.prefix}help command" for more info on a command.')
+            text=f'Use "/help command" for more info on a command.')
         return embed
 
 
@@ -122,8 +122,8 @@ class FrontPageSource(menus.PageSource):
         embed = discord.Embed(
             title='Need some help?', colour=discord.Colour(0xda9f31))
         embed.description = inspect.cleandoc(
-            f"""Not used to slash commands? Can't immediately find what you're looking for?"""
-            """Try the `dropdown menu` below for help with specific commands or go to the `next page`"""
+            f"""Not used to slash commands? Can't immediately find what you're looking for? """
+            """Try the `dropdown menu` below for help with specific commands or go to the `next page` """
             """for some extra general explanations. If that doesn't help, join the [support server](https://discord.gg/2XfmHUH) below and ask me :)."""
         )
         embed.set_thumbnail(
@@ -158,7 +158,8 @@ class FrontPageSource(menus.PageSource):
 
             for name, value in entries:
                 embed.add_field(name=name, value=value, inline=False)
-
+        embed.set_footer(
+            text=f'The prefixes for the bot are "/" and "!"')
         return embed
 
 

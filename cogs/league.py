@@ -21,14 +21,13 @@ class League(commands.Cog):
         self.bot: commands.Bot = bot
         self.DAO: LolWatcher = LolWatcher(config.riot_api)
 
-    @property
-    def display_emoji(self) -> discord.PartialEmoji:
-        return discord.PartialEmoji(name='✊')
-
     @commands.hybrid_group(invoke_without_command=False)
     async def league(self, ctx):
         """League of legends commands, !help league for more info."""
-        pass
+        embed = FooterEmbed(self.bot)
+        embed.add_field(
+            name='Whoops...', value="This command cannot be used without a subcommand.")
+        await ctx.send(embed=embed)
 
     @league.command(name="profile")
     async def profile(self, ctx, region: str, *, name: str):

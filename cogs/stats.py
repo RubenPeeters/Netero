@@ -15,10 +15,6 @@ class Stats(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot: commands.Bot = bot
 
-    @property
-    def display_emoji(self) -> discord.PartialEmoji:
-        return discord.PartialEmoji(name='💻')
-
     def get_bot_uptime(self, *, brief=False):
         return time.human_timedelta(self.bot.uptime, accuracy=None, brief=brief, suffix=False)
 

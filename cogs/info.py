@@ -11,6 +11,7 @@ from discord import app_commands
 from .utils import time
 from .utils.embed import FooterEmbed
 from .views.button import TestButton
+from .utils.context import Context
 
 
 class Info(commands.Cog):
@@ -22,17 +23,24 @@ class Info(commands.Cog):
         bot.help_command = PaginatedHelpCommand()
         bot.help_command.cog = self
 
-    @property
-    def display_emoji(self) -> discord.PartialEmoji:
-        return discord.PartialEmoji(name='📓')
-
     @commands.hybrid_group(invoke_without_command=False)
     async def info(self, ctx):
         """General info commands"""
-        pass
+        embed = FooterEmbed(self.bot)
+        embed.add_field(
+            name='Whoops...', value="This command cannot be used without a subcommand.")
+        await ctx.send(embed=embed)
 
     def cog_unload(self):
         self.bot.help_command = self.old_help_command
+
+    @app_commands.command(name="help")
+    async def help(self, interaction, *, cog_or_command: str = None):
+        ctx = await Context.from_interaction(interaction)
+        if cog_or_command is None:
+            await ctx.send_help()
+        else:
+            await ctx.send_help(cog_or_command)
 
     @info.command()
     async def bot(self, ctx):

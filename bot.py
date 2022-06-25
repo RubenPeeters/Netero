@@ -1,4 +1,5 @@
 import discord
+from discord import activity
 from discord.ext import commands
 from cogs.utils import context
 import traceback
@@ -41,7 +42,9 @@ class Netero(commands.Bot):
             description='Multi-functional personal slave',
             intents=intents,
             enable_debug_events=True,
+            activity=discord.Game('/help - !help')
         )
+
         self.blacklist = []
         self.client_id: str = config.client_id
         self.owner_id: int = 150907968068648960

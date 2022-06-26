@@ -73,6 +73,10 @@ class Netero(commands.Bot):
                       file=sys.stderr)
         elif isinstance(error, commands.ArgumentParsingError):
             await ctx.send(str(error))
+            print(f'In {ctx.command.qualified_name}:', file=sys.stderr)
+            traceback.print_tb(original.__traceback__)
+            print(f'{original.__class__.__name__}: {original}',
+                  file=sys.stderr)
 
     async def on_ready(self):
         if not hasattr(self, 'uptime'):

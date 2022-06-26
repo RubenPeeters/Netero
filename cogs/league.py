@@ -1,4 +1,5 @@
 import asyncio
+
 from cogs.owner import MY_GUILD
 import discord
 from discord.ext import commands
@@ -6,12 +7,15 @@ from discord import app_commands
 
 import config
 
+from pantheon import pantheon
+import asyncio
+
 from riotwatcher import LolWatcher, ApiError
 
 from .utils import time
 from .utils.embed import FooterEmbed
 from .views.button import TestButton
-from .utils.riot import Player
+from .utils.riot import PantheonPlayer
 
 
 class League(commands.Cog):
@@ -19,7 +23,6 @@ class League(commands.Cog):
 
     def __init__(self, bot: commands.Bot) -> None:
         self.bot: commands.Bot = bot
-        self.DAO: LolWatcher = LolWatcher(config.riot_api)
 
     @commands.hybrid_group(invoke_without_command=False)
     async def league(self, ctx):
@@ -27,31 +30,29 @@ class League(commands.Cog):
         embed = FooterEmbed(self.bot)
         embed.add_field(
             name='Whoops...', value="This command cannot be used without a subcommand.")
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed)
 
     @league.command(name="profile")
     async def profile(self, ctx, region: str, *, name: str):
         """Summoner profile info"""
-        summoner = Player(region=region, name=name, DAO=self.DAO, bot=self.bot)
-        await ctx.send(embed=summoner.to_embed())
+        summoner = PantheonPlayer(
+            region=region, name=name, bot=self.bot)
+        embed = await summoner.to_embed()
+        await ctx.reply(embed=embed)
 
-    # @lol.command(name="history")
-    # async def profile(self, interaction, region: str, *, name: str):
-    #     """Summoner profile info"""
-    #     summoner = Player(region=region, name=name, DAO=self.DAO, bot=self.bot)
-    #     await interaction.response.send_message(embed=summoner.to_embed())
+    @league.command(name="live")
+    async def live(self, ctx, region: str, *, name: str):
+        """Summoner in game info"""
+        summoner = PantheonPlayer(
+            region=region, name=name, bot=self.bot)
+        original_embed = FooterEmbed(self.bot,
+                                     title="Crunching the numbers...", description="Just a moment.")
 
-    # @lol.command(name="live")
-    # async def live(self, interaction, region: str, *, name: str):
-    #     """Summoner in game info"""
-    #     async def a_loop():
-    #         summoner = Player(region=region, name=name,
-    #                           DAO=self.DAO, bot=self.bot)
-    #         await interaction.response.edit_message(embed=summoner.match_to_embed())
-
-    #     loop = asyncio.get_event_loop()
-    #     loop.run.until_complete(a_loop())
-    #     await interaction.response.defer(thinking=True)
+        message = await ctx.send(embed=original_embed)
+        print(message)
+        embed = await summoner.match_to_embed()
+        print(embed)
+        await message.edit(embed=embed)
 
 
 async def setup(bot):

@@ -29,7 +29,7 @@ class Info(commands.Cog):
         embed = FooterEmbed(self.bot)
         embed.add_field(
             name='Whoops...', value="This command cannot be used without a subcommand.")
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed)
 
     def cog_unload(self):
         self.bot.help_command = self.old_help_command
@@ -59,7 +59,7 @@ class Info(commands.Cog):
                 url='https://github.com/RubenPeeters/Netero/blob/main/cogs/assets/netero_profile.jpg?raw=true')
             embed.add_field(
                 name="Donations", value="These are a great incentive for me to keep working on the bot. If you enjoy Netero, consider supporting its development by donating [here.](https://paypal.me/Itachibot)")
-            await ctx.send(embed=embed)
+            await ctx.reply(embed=embed)
         except Exception as e:
             exc = "{}: {}".format(type(e).__name__, e)
             print('Failed to send embed\n{}'.format(exc))
@@ -91,7 +91,7 @@ class Info(commands.Cog):
             join.add_field(
                 name='Channels', value=str(channelz), inline=False)
             join.add_field(name=' Roles', value=roles, inline=False)
-            await ctx.send(embed=join)
+            await ctx.reply(embed=join)
         except Exception as e:
             exc = "{}: {}".format(type(e).__name__, e)
             print('Failed to send embed\n{}'.format(exc))

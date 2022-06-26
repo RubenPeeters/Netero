@@ -79,7 +79,7 @@ class Owner(commands.Cog):
                 else:
                     fmt = await ctx.bot.tree.sync()
 
-                await ctx.send(
+                await ctx.reply(
                     f"Synced {len(fmt)} commands {'globally' if spec is None else 'to the current guild.'}"
                 )
                 return
@@ -92,7 +92,7 @@ class Owner(commands.Cog):
                     pass
                 else:
                     fmt += 1
-            await ctx.send(f"Synced the tree to {fmt}/{len(guilds)} guilds.")
+            await ctx.reply(f"Synced the tree to {fmt}/{len(guilds)} guilds.")
 
     @commands.command(hidden=True)
     async def load(self, ctx, *, module):
@@ -100,9 +100,9 @@ class Owner(commands.Cog):
         try:
             await self.bot.load_extension(module)
         except commands.ExtensionError as e:
-            await ctx.send(f'{e.__class__.__name__}: {e}')
+            await ctx.reply(f'{e.__class__.__name__}: {e}')
         else:
-            await ctx.send('```ini\n[INFO] Looks like that worked, boss 👌```')
+            await ctx.reply('```ini\n[INFO] Looks like that worked, boss 👌```')
 
     @commands.command(hidden=True)
     async def unload(self, ctx, *, module):
@@ -110,9 +110,9 @@ class Owner(commands.Cog):
         try:
             await self.bot.unload_extension(module)
         except commands.ExtensionError as e:
-            await ctx.send(f'{e.__class__.__name__}: {e}')
+            await ctx.reply(f'{e.__class__.__name__}: {e}')
         else:
-            await ctx.send('```ini\n[INFO] Looks like that worked, boss 👌```')
+            await ctx.reply('```ini\n[INFO] Looks like that worked, boss 👌```')
 
     @commands.group(name='reload', hidden=True, invoke_without_command=True)
     async def _reload(self, ctx, *, module):
@@ -120,9 +120,9 @@ class Owner(commands.Cog):
         try:
             await self.bot.reload_extension(module)
         except commands.ExtensionError as e:
-            await ctx.send(f'{e.__class__.__name__}: {e}')
+            await ctx.reply(f'{e.__class__.__name__}: {e}')
         else:
-            await ctx.send('```ini\n[INFO] Looks like that worked, boss 👌```')
+            await ctx.reply('```ini\n[INFO] Looks like that worked, boss 👌```')
 
     _GIT_PULL_REGEX = re.compile(r'\s*(?P<filename>.+?)\s*\|\s*[0-9]+\s*[+-]+')
 
@@ -161,7 +161,7 @@ class Owner(commands.Cog):
         # along with the text "already up-to-date" are in stdout
 
         if stdout.startswith('Already up-to-date.'):
-            return await ctx.send(stdout)
+            return await ctx.reply(stdout)
 
         modules = self.find_modules_from_git(stdout)
         mods_text = '\n'.join(
@@ -169,7 +169,7 @@ class Owner(commands.Cog):
         prompt_text = f'This will update the following modules, are you sure?\n{mods_text}'
         confirm = await ctx.prompt(prompt_text, reacquire=False)
         if not confirm:
-            return await ctx.send('Aborting.')
+            return await ctx.reply('Aborting.')
 
         statuses = []
         for is_submodule, module in modules:
@@ -193,7 +193,7 @@ class Owner(commands.Cog):
                 else:
                     statuses.append((ctx.tick(True), module))
 
-        await ctx.send('\n'.join(f'{status}: `{module}`' for status, module in statuses))
+        await ctx.reply('\n'.join(f'{status}: `{module}`' for status, module in statuses))
 
     @commands.command(hidden=True)
     async def sudo(self, ctx, channel: Optional[GlobalChannel], who: Union[discord.Member, discord.User], *, command: str):

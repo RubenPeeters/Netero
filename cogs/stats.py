@@ -1,3 +1,4 @@
+from matplotlib.pyplot import title
 from cogs.owner import MY_GUILD
 import discord
 from discord.ext import commands
@@ -21,7 +22,7 @@ class Stats(commands.Cog):
     @commands.hybrid_command(name="uptime")
     async def uptime(self, ctx):
         """Tells you how long the bot has been up for."""
-        await ctx.send(content=f'Uptime: **{self.get_bot_uptime()}**')
+        await ctx.reply(content=f'Uptime: **{self.get_bot_uptime()}**')
 
     @commands.hybrid_command(name="ui", hidden=True)
     async def ui(self, ctx):
@@ -34,13 +35,13 @@ class Stats(commands.Cog):
         view.add_item(button)
         # view.add_item(input)
         # view.add_item(select)
-        await ctx.send(content=f'Test message', view=view)
+        await ctx.reply(content=f'Test message', view=view)
 
     @commands.hybrid_command(name="stats")
     async def stats(self, ctx):
         """Tells you information about the bot itself."""
         try:
-            embed = FooterEmbed(self.bot)
+            embed = FooterEmbed(self.bot, title='Netero statistics')
 
             # statistics
             total_members = sum(1 for _ in self.bot.get_all_members())
@@ -57,10 +58,10 @@ class Stats(commands.Cog):
             text = len(text_channels)
             voice = len(voice_channels)
             payload = f' \
-            `{"Members":8}:` {total_members:16d}\n \
-            `{"Channels":8}:` {text + voice:16d}\n \
-            `{"Servers":8}:` {str(len(self.bot.guilds)):16}\n \
-            `{"Uptime":8}:` {self.get_bot_uptime(brief=True):16}\n \
+            ```{"Members":8}: {total_members:16d}```\n \
+            ```{"Channels":8}: {text + voice:16d}```\n \
+            ```{"Servers":8}: {str(len(self.bot.guilds)):16}```\n \
+            ```{"Uptime":8}: {self.get_bot_uptime(brief=True):16}```\n \
             '
             embed.set_thumbnail(
                 url='https://github.com/RubenPeeters/Netero/blob/main/cogs/assets/netero_thumbnail.jpg?raw=true')
@@ -68,7 +69,7 @@ class Stats(commands.Cog):
                 name='\u200b', value=payload)
             await ctx.send(embed=embed)
         except Exception as e:
-            await ctx.send('{}: {}'.format(type(e).__name__, e))
+            await ctx.reply('{}: {}'.format(type(e).__name__, e))
 
 
 async def setup(bot):

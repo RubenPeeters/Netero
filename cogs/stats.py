@@ -1,4 +1,3 @@
-from matplotlib.pyplot import title
 from cogs.owner import MY_GUILD
 import discord
 from discord.ext import commands

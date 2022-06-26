@@ -23,6 +23,10 @@ class League(commands.Cog):
 
     def __init__(self, bot: commands.Bot) -> None:
         self.bot: commands.Bot = bot
+        self.waiting_embed = FooterEmbed(self.bot,
+                                         title="Crunching the numbers...", description="Just a moment.")
+        self.waiting_embed.set_thumbnail(
+            url='https://github.com/RubenPeeters/Netero/blob/main/cogs/assets/netero_waiting.gif?raw=true')
 
     @commands.hybrid_group(invoke_without_command=False)
     async def league(self, ctx):
@@ -37,18 +41,17 @@ class League(commands.Cog):
         """Summoner profile info"""
         summoner = PantheonPlayer(
             region=region, name=name, bot=self.bot)
+
+        message = await ctx.send(embed=self.waiting_embed)
         embed = await summoner.to_embed()
-        await ctx.reply(embed=embed)
+        await message.edit(embed=embed)
 
     @league.command(name="live")
     async def live(self, ctx, region: str, *, name: str):
         """Summoner in game info"""
         summoner = PantheonPlayer(
             region=region, name=name, bot=self.bot)
-        original_embed = FooterEmbed(self.bot,
-                                     title="Crunching the numbers...", description="Just a moment.")
-
-        message = await ctx.send(embed=original_embed)
+        message = await ctx.send(embed=self.waiting_embed)
         embed = await summoner.match_to_embed()
         await message.edit(embed=embed)
 

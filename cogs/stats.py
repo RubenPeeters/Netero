@@ -57,8 +57,8 @@ class Stats(commands.Cog):
             text = len(text_channels)
             voice = len(voice_channels)
             payload = f' \
-            ```{"Members":8}: {total_members:16d}```\n \
-            ```{"Channels":8}: {text + voice:16d}```\n \
+            ```{"Members":8}: {total_members:16}```\n \
+            ```{"Channels":8}: {text + voice:16}```\n \
             ```{"Servers":8}: {str(len(self.bot.guilds)):16}```\n \
             ```{"Uptime":8}: {self.get_bot_uptime(brief=True):16}```\n \
             '

@@ -1,0 +1,63 @@
+{
+    "name": "summoner",
+    "__meta__": "cogs.league.Summoner",
+    "columns": [
+        {
+            "column_type": {
+                "big": false,
+                "small": false,
+                "auto_increment": true,
+                "__meta__": "cogs.utils.db.Integer"
+            },
+            "index": false,
+            "primary_key": true,
+            "nullable": true,
+            "default": null,
+            "unique": false,
+            "name": "id",
+            "index_name": null
+        },
+        {
+            "column_type": {
+                "length": null,
+                "fixed": false,
+                "__meta__": "cogs.utils.db.String"
+            },
+            "index": true,
+            "primary_key": false,
+            "nullable": true,
+            "default": null,
+            "unique": false,
+            "name": "summoner_id",
+            "index_name": "summoner_summoner_id_idx"
+        },
+        {
+            "column_type": {
+                "length": null,
+                "fixed": false,
+                "__meta__": "cogs.utils.db.String"
+            },
+            "index": false,
+            "primary_key": false,
+            "nullable": true,
+            "default": null,
+            "unique": false,
+            "name": "region",
+            "index_name": null
+        },
+        {
+            "column_type": {
+                "length": null,
+                "fixed": false,
+                "__meta__": "cogs.utils.db.String"
+            },
+            "index": false,
+            "primary_key": false,
+            "nullable": true,
+            "default": null,
+            "unique": false,
+            "name": "account_id",
+            "index_name": null
+        }
+    ]
+}

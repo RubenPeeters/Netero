@@ -1,7 +1,8 @@
+from typing import Union
 import discord
 from discord import activity
 from discord.ext import commands
-from cogs.utils import context
+from cogs.utils.context import Context
 import traceback
 import logging
 import config
@@ -42,7 +43,7 @@ class Netero(commands.Bot):
             description='Multi-functional personal slave',
             intents=intents,
             enable_debug_events=True,
-            activity=discord.Game('/help - !help')
+            activity=discord.Game('/help')
         )
 
         self.blacklist = []
@@ -88,8 +89,11 @@ class Netero(commands.Bot):
 
         log.info(f'Ready: {self.user} (ID: {self.user.id})')
 
+    async def get_context(self, origin: Union[discord.Interaction, discord.Message], /, *, cls=Context) -> Context:
+        return await super().get_context(origin, cls=cls)
+
     async def process_commands(self, message: discord.Message):
-        ctx = await self.get_context(message, cls=context.Context)
+        ctx = await self.get_context(message, cls=Context)
 
         if ctx.command is None:
             return
@@ -103,7 +107,7 @@ class Netero(commands.Bot):
         try:
             await self.invoke(ctx)
         finally:
-            pass
+            await ctx.release()
 
     async def on_message(self, message: discord.Message) -> None:
         if message.author.bot:

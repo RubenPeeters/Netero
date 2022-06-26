@@ -10,6 +10,7 @@ import os
 
 from pantheon import pantheon
 import asyncio
+import asyncpg
 import config
 import json
 
@@ -66,13 +67,13 @@ class PantheonPlayer:
         else:
             self.region = region + '1'
         self.DAO = pantheon.Pantheon(
-            self.region, config.riot_api, requests_logging_function=lambda url, status, headers: print(url, status, headers), debug=False)
+            self.region, config.riot_api, requests_logging_function=lambda url, status, headers: print(url, status, headers), debug=True)
         self.player_object = None
         self.leagues = None
         self.current_match = None
         self.data = StaticData()
 
-    async def initialize_player_object(self):
+    async def initialize_player_object(self, ranks=True, match=True, data=True):
         try:
             if self.player_object is None:
                 self.player_object = await self.DAO.get_summoner_by_name(self.name)
@@ -83,9 +84,11 @@ class PantheonPlayer:
                 self.puuid = self.player_object['puuid']
                 self.name = self.player_object['name']
                 # initialize ranks
-                await self.update_ranks()
-                await self.get_current_match()
-                if not self.data.loaded:
+                if ranks:
+                    await self.update_ranks()
+                if match:
+                    await self.get_current_match()
+                if data and not self.data.loaded:
                     self.data.load_static()
         except Exception as e:
             print(e)
@@ -143,6 +146,28 @@ class PantheonPlayer:
             return await asyncio.gather(*tasks)
         except Exception as e:
             print(e)
+
+    # NOT NECESARRY CURRENTLY
+
+    # async def db_player_init(self, ctx):
+    #     query = """
+    #                 INSERT INTO Players (summoner_id, account_id, profile_icon_id, summoner_level, puuid, name, solo_rank, solo_winrate, flex_rank, flex_winrate, solo_LP, flex_LP)
+    #                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8,$9, $10, $11, $12);
+    #             """
+    #     try:
+    #         await ctx.db.execute(query, self.summoner_id, self.account_id, self.profile_icon_id, self.summoner_level, self.puuid, self.name, self.solo_rank, self.solo_winrate, self.flex_rank, self.flex_winrate, self.solo_LP, self.flex_LP)
+    #     except:
+    #         await ctx.send('Could not initialize player in db.')
+
+    # # will return none if not exists
+    # async def db_player_get(self, ctx):
+    #     query = """
+    #                 SELECT summoner_id, updated, account_id, profile_icon_id, summoner_level, puuid, name, solo_rank, solo_winrate, flex_rank, flex_winrate, solo_LP, flex_LP FROM Players
+    #                 WHERE summoner_id=$1;
+    #             """
+    #     row = await self.bot.pool.fetchrow(query, self.summoner_id)
+
+    #     return row
 
     async def to_embed(self) -> discord.Embed():
         await self.initialize_player_object()

@@ -26,7 +26,7 @@ class League(commands.Cog):
         self.waiting_embed = FooterEmbed(self.bot,
                                          title="Crunching the numbers...", description="Just a moment.")
         self.waiting_embed.set_thumbnail(
-            url='https://github.com/RubenPeeters/Netero/blob/main/cogs/assets/netero_waiting.gif?raw=true')
+            url='https://raw.githubusercontent.com/RubenPeeters/Netero/main/cogs/assets/netero_waiting.gif')
 
     @commands.hybrid_group(invoke_without_command=False)
     async def league(self, ctx):

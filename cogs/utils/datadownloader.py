@@ -54,6 +54,7 @@ def download_files_from_url(urls):
         with open(
             os.path.join(FILES_PATH, fname), "wb"
         ) as outfile:
+            print(outfile)
             outfile.write(response.content)
             print(response)
     for url in urls:
@@ -67,21 +68,6 @@ def get_champs():
         png = str(
             data.champions_json["data"][champ]["image"]["full"])
         champ = png.split('.')[0]
-        # stripped_url = stripped_url.replace(".", "")
-        # if "'" in stripped_url:
-        #     stripped_url = stripped_url.split("'")
-        #     stripped_url[1] = stripped_url[1].lower()
-        #     stripped_url = "".join(stripped_url)
-        # if "&" in stripped_url:
-        #     stripped_url = stripped_url.split("&")[0]
-        # # exceptions
-        # if "Renata" in stripped_url:
-        #     stripped_url = "Renata"
-        # if "Kogmaw" in stripped_url:
-        #     stripped_url = "KogMaw"
-        # if "Leblanc" in stripped_url:
-        #     stripped_url = "Leblanc"
-
         download_files_from_url([
             f'http://ddragon.leagueoflegends.com/cdn/{VERSION}/data/en_US/champion/{champ}.json',
             f'http://ddragon.leagueoflegends.com/cdn/{VERSION}/img/champion/{png}'
@@ -94,6 +80,7 @@ if __name__ == '__main__':
         f'http://ddragon.leagueoflegends.com/cdn/{VERSION}/data/en_US/summoner.json',
         f'http://ddragon.leagueoflegends.com/cdn/{VERSION}/data/en_US/profileicon.json',
         f'http://ddragon.leagueoflegends.com/cdn/{VERSION}/data/en_US/item.json',
+        'https://static.developer.riotgames.com/docs/lol/queues.json'
     ]
     )
     get_champs()

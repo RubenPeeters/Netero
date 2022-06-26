@@ -1,12 +1,46 @@
+import json
 import os
+from pathlib import Path
 import requests
 
-VERSION = '12.11.1'
+VERSION = '12.12.1'
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 FOLDER = "static"
 FILES_PATH = os.path.join(dir_path, FOLDER, "league")
 print(FILES_PATH)
+
+# redefine because of some import problems
+
+
+class StaticData:
+    def __init__(self) -> None:
+        self.champions_json = None
+        self.summoner_json = None
+        self.loaded = False
+
+    def load_static(self):
+        path = Path(__file__).parent
+        FILES_PATH = os.path.join(path, 'static', "league", "champion.json")
+        if os.path.exists(FILES_PATH):
+            try:
+                with open(FILES_PATH, encoding="utf-8") as f:
+                    self.champions_json = json.load(f)
+            except Exception as err:
+                print(f'error {err}')
+        else:
+            print('no file')
+        path = Path(__file__).parent
+        FILES_PATH = os.path.join(path, 'static', "league", "summoner.json")
+        if os.path.exists(FILES_PATH):
+            try:
+                with open(FILES_PATH, encoding="utf-8") as f:
+                    self.summoner_json = json.load(f)
+            except Exception as err:
+                print(f'error {err}')
+        else:
+            print('no file')
+        self.loaded = True
 
 
 def download_files_from_url(urls):
@@ -20,10 +54,38 @@ def download_files_from_url(urls):
         with open(
             os.path.join(FILES_PATH, fname), "wb"
         ) as outfile:
-            print(outfile)
             outfile.write(response.content)
+            print(response)
     for url in urls:
         fetch_file(url)
+
+
+def get_champs():
+    data = StaticData()
+    data.load_static()
+    for champ in data.champions_json['data']:
+        png = str(
+            data.champions_json["data"][champ]["image"]["full"])
+        champ = png.split('.')[0]
+        # stripped_url = stripped_url.replace(".", "")
+        # if "'" in stripped_url:
+        #     stripped_url = stripped_url.split("'")
+        #     stripped_url[1] = stripped_url[1].lower()
+        #     stripped_url = "".join(stripped_url)
+        # if "&" in stripped_url:
+        #     stripped_url = stripped_url.split("&")[0]
+        # # exceptions
+        # if "Renata" in stripped_url:
+        #     stripped_url = "Renata"
+        # if "Kogmaw" in stripped_url:
+        #     stripped_url = "KogMaw"
+        # if "Leblanc" in stripped_url:
+        #     stripped_url = "Leblanc"
+
+        download_files_from_url([
+            f'http://ddragon.leagueoflegends.com/cdn/{VERSION}/data/en_US/champion/{champ}.json',
+            f'http://ddragon.leagueoflegends.com/cdn/{VERSION}/img/champion/{png}'
+        ])
 
 
 if __name__ == '__main__':
@@ -34,3 +96,4 @@ if __name__ == '__main__':
         f'http://ddragon.leagueoflegends.com/cdn/{VERSION}/data/en_US/item.json',
     ]
     )
+    get_champs()

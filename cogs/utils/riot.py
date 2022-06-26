@@ -19,6 +19,7 @@ VERSION = '12.11.1'
 class StaticData:
     def __init__(self) -> None:
         self.champions_json = None
+        self.summoner_json = None
         self.loaded = False
 
     def load_static(self):
@@ -28,6 +29,16 @@ class StaticData:
             try:
                 with open(FILES_PATH, encoding="utf-8") as f:
                     self.champions_json = json.load(f)
+            except Exception as err:
+                print(f'error {err}')
+        else:
+            print('no file')
+        path = Path(__file__).parent
+        FILES_PATH = os.path.join(path, 'static', "league", "summoner.json")
+        if os.path.exists(FILES_PATH):
+            try:
+                with open(FILES_PATH, encoding="utf-8") as f:
+                    self.summoner_json = json.load(f)
             except Exception as err:
                 print(f'error {err}')
         else:
@@ -71,15 +82,21 @@ class PantheonPlayer:
         self.solo_winrate = 'not enough games played'
         self.flex_rank = 'Unranked'
         self.flex_winrate = 'not enough games played'
+        self.solo_LP = None
+        self.flex_LP = None
         for league in self.leagues:
             if league['queueType'] == 'RANKED_SOLO_5x5':
                 self.solo_rank = f'{league["tier"].capitalize()}  {league["rank"]} '
                 self.solo_winrate = str(league['wins']) + 'W/' + str(league['losses']) + 'L: ' + str(
                     math.ceil(league['wins']/(league['wins']+league['losses'])*100)) + '% WR'
+                self.solo_LP = league['leaguePoints']
+                self.solo_winrate_compact = f"{str(math.ceil(league['wins']/(league['wins']+league['losses'])*100))}% {str(league['wins']+league['losses'])}G"
             if league['queueType'] == 'RANKED_FLEX_SR':
                 self.flex_rank = f'{league["tier"].capitalize()}  {league["rank"]} '
                 self.flex_winrate = str(league['wins']) + 'W/' + str(league['losses']) + 'L: ' + str(
                     math.ceil(league['wins']/(league['wins']+league['losses'])*100)) + '% WR'
+                self.flex_LP = league['leaguePoints']
+                self.flex_winrate_compact = f"{str(math.ceil(league['wins']/(league['wins']+league['losses'])*100))}% {str(league['wins']+league['losses'])}G"
 
     async def get_current_match(self):
         try:
@@ -127,20 +144,19 @@ class PantheonPlayer:
     async def match_to_embed(self) -> discord.Embed():
         await self.initialize_player_object()
         all_gamers = []
-        print('test')
 
         await self.get_current_match()
         embed = discord.Embed(
-            title=f'{self.name}\'s live game', color=self.bot.color)
+            title=f'{self.name}s live game', color=self.bot.color)
         if not self.current_match:
             embed.add_field(name='\u200b', value='Currently not in game.')
             return embed
-        team1 = "__**Blue team**__:\n"
-        team2 = "__**Red team**__:\n"
-        ssteam1 = "\u200b\n"
-        ssteam2 = "\u200b\n"
-        rankteam1 = "\u200b\n"
-        rankteam2 = "\u200b\n"
+        team1 = "\n[Blue team]\n\n"
+        team2 = "\n[Red team]\n\n"
+        ssteam1 = "\n\u200b\n\n"
+        ssteam2 = "\n\u200b\n\n"
+        rankteam1 = "\n\u200b\n\n"
+        rankteam2 = "\n\u200b\n\n"
         for gamer in self.current_match["participants"]:
             gamer_info = [gamer["championId"], gamer["summonerName"],
                           gamer["spell1Id"], gamer["spell2Id"], gamer["teamId"]]
@@ -148,39 +164,47 @@ class PantheonPlayer:
         for gamer in all_gamers:
             player = PantheonPlayer(gamer[1], self.region, self.bot)
             await player.initialize_player_object()
-            champ_name = self.get_champ_from_id(gamer[0])
+            champ_id = self.get_champ_from_id(gamer[0])
+            # champ_name = self.get_champ_name_from_id(gamer[0])
             ss1_name = self.get_ss_from_id(gamer[2])
             ss2_name = self.get_ss_from_id(gamer[3])
-            champ_emote = get_emote_strings(champ_name, self.bot)
+            champ_emote = get_emote_strings(champ_id, self.bot)
             ss1_emote = get_emote_strings(ss1_name, self.bot)
             ss2_emote = get_emote_strings(ss2_name, self.bot)
             if gamer[4] == 100:
-                team1 += "{:2s} **{:20s}**\n".format(champ_emote, gamer[1])
-                ssteam1 += "\t{}{}\n".format(ss1_emote, ss2_emote)
-                rankteam1 += f"{player.solo_rank}\n"
+                team1 += f"{champ_emote} {gamer[1]}\n"
+                ssteam1 += "\t{} {}\n".format(ss1_emote, ss2_emote)
+                rankteam1 += f"{player.solo_rank} ({player.solo_LP} LP)\n"
             else:
-                team2 += f"{champ_emote} **{gamer[1]:20s}**\n"
-                ssteam2 += "\t{}{}\n".format(ss1_emote, ss2_emote)
-                rankteam2 += f"{player.solo_rank}\n"
+                team2 += f"{champ_emote} {gamer[1]}\n"
+                ssteam2 += "\t{} {}\n".format(ss1_emote, ss2_emote)
+                rankteam2 += f"{player.solo_rank} ({player.solo_LP} LP)\n"
         teams = team1 + team2
         ssteams = ssteam1 + ssteam2
         rankteams = rankteam1 + rankteam2
         embed.add_field(name="Teams", value=teams)
         embed.add_field(name="Ranks", value=rankteams)
         embed.add_field(name="Summoners", value=ssteams)
+        embed.set_author(
+            name=f'{self.name}', icon_url=f'http://ddragon.leagueoflegends.com/cdn/{VERSION}/img/profileicon/{self.profile_icon_id}.png')
         return embed
 
     def get_champ_from_id(self, id: int) -> str:
         for champ in self.data.champions_json['data']:
             if int(self.data.champions_json['data'][champ]['key']) == id:
-                print(self.data.champions_json['data'][champ]['name'])
+                return self.data.champions_json['data'][champ]['id']
+
+        return None
+
+    def get_champ_name_from_id(self, id: int) -> str:
+        for champ in self.data.champions_json['data']:
+            if int(self.data.champions_json['data'][champ]['key']) == id:
                 return self.data.champions_json['data'][champ]['name']
 
         return None
 
     def get_ss_from_id(self, id: int):
         for spell in self.data.summoner_json['data']:
-            if self.data.summoner_json['data'][spell]['key'] == id:
-                print(self.data.summoner_json['data'][spell]['name'])
+            if int(self.data.summoner_json['data'][spell]['key']) == id:
                 return self.data.summoner_json['data'][spell]['name']
         return None

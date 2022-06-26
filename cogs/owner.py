@@ -1,3 +1,4 @@
+import requests
 from discord.ext import commands
 import asyncio
 import traceback
@@ -18,7 +19,8 @@ from discord.ext.commands.converter import Greedy
 from discord.object import Object
 from .utils.context import Context
 from typing import Literal, Union, Optional
-
+from .utils.riot import PantheonPlayer
+from .utils.datadownloader import VERSION
 # to expose to the eval command
 import datetime
 from collections import Counter
@@ -222,6 +224,49 @@ class Owner(commands.Cog):
     @commands.command(hidden=True)
     async def get_app_commands(self, ctx):
         print(await self.bot.tree.fetch_commands())
+
+    @commands.command(hidden=True)
+    async def update_champion_emotes(self, ctx):
+        import os
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        FILES_PATH = os.path.join(dir_path, 'utils', 'static', "league")
+        print(FILES_PATH)
+        for file in os.listdir(FILES_PATH):
+            if file.endswith(".png"):
+                await self.add_to_emote_servers(file, FILES_PATH)
+
+    async def add_to_emote_servers(self, filename: str, path: str):
+        '''Add an emote to the database'''
+        duplicate = False
+        emoji = filename.split('.')[0]
+
+        file = os.path.join(path, filename)
+        for s in self.bot.emote_servers:
+            for emo in self.bot.get_guild(s).emojis:
+                if emo.name.lower() == emoji.lower():
+                    duplicate = True
+                    print(f"There already is an emote with name {emoji}.")
+                    break
+        if not duplicate:
+            try:
+                for s in self.bot.emote_servers:
+                    count = 0
+                    for emo in self.bot.get_guild(s).emojis:
+                        if not emo.animated:
+                            count += 1
+                    if count < 50:
+                        usable_server_id = s
+                        break
+                server = self.bot.get_guild(usable_server_id)
+                print(file)
+                with open(file, "rb") as image:
+                    f = image.read()
+                    b = bytes(f)
+                    server = self.bot.get_guild(usable_server_id)
+                    await server.create_custom_emoji(name=emoji, image=b)
+            except Exception as e:
+                exc = "{}: {}".format(type(e).__name__, e)
+                print('Failed to add non-animated emote\n{}'.format(exc))
 
 
 async def setup(bot):

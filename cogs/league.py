@@ -16,7 +16,6 @@ from .utils import time
 from .utils.embed import FooterEmbed
 from .views.button import TestButton
 from .utils.riot import PantheonPlayer
-from .utils.emotes import get_emote_strings
 
 
 class League(commands.Cog):
@@ -50,9 +49,7 @@ class League(commands.Cog):
                                      title="Crunching the numbers...", description="Just a moment.")
 
         message = await ctx.send(embed=original_embed)
-        print(message)
         embed = await summoner.match_to_embed()
-        print(embed)
         await message.edit(embed=embed)
 
 

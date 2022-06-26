@@ -1,4 +1,5 @@
 
+from .emotes import get_emote_strings
 from pathlib import Path
 import aiofiles
 from riotwatcher import LolWatcher, ApiError
@@ -150,15 +151,15 @@ class PantheonPlayer:
             champ_name = self.get_champ_from_id(gamer[0])
             ss1_name = self.get_ss_from_id(gamer[2])
             ss2_name = self.get_ss_from_id(gamer[3])
-            # champ_emote = player.get_emote_strings(champ_name)
-            # ss1_emote = player.get_emote_strings(ss1_name)
-            # ss2_emote = player.get_emote_strings(ss2_name)
+            champ_emote = get_emote_strings(champ_name, self.bot)
+            # ss1_emote = get_emote_strings(ss1_name, self.bot)
+            # ss2_emote = get_emote_strings(ss2_name, self.bot)
             if gamer[4] == 100:
-                team1 += "{:2s} **{:20s}**\n".format(champ_name, gamer[1])
+                team1 += "{:2s} **{:20s}**\n".format(champ_emote, gamer[1])
                 ssteam1 += "\t{}{}\n".format(ss1_name, ss2_name)
                 rankteam1 += f"{player.solo_rank}\n"
             else:
-                team2 += f"{champ_name:2s} **{gamer[1]:20s}**\n"
+                team2 += f"{champ_emote} **{gamer[1]:20s}**\n"
                 ssteam2 += "\t{}{}\n".format(ss1_name, ss2_name)
                 rankteam2 += f"{player.solo_rank}\n"
         teams = team1 + team2

@@ -29,5 +29,8 @@ def download_files_from_url(urls):
 if __name__ == '__main__':
     download_files_from_url([
         f'http://ddragon.leagueoflegends.com/cdn/{VERSION}/data/en_US/champion.json',
+        f'http://ddragon.leagueoflegends.com/cdn/{VERSION}/data/en_US/summoner.json',
+        f'http://ddragon.leagueoflegends.com/cdn/{VERSION}/data/en_US/profileicon.json',
+        f'http://ddragon.leagueoflegends.com/cdn/{VERSION}/data/en_US/item.json',
     ]
     )

@@ -152,15 +152,15 @@ class PantheonPlayer:
             ss1_name = self.get_ss_from_id(gamer[2])
             ss2_name = self.get_ss_from_id(gamer[3])
             champ_emote = get_emote_strings(champ_name, self.bot)
-            # ss1_emote = get_emote_strings(ss1_name, self.bot)
-            # ss2_emote = get_emote_strings(ss2_name, self.bot)
+            ss1_emote = get_emote_strings(ss1_name, self.bot)
+            ss2_emote = get_emote_strings(ss2_name, self.bot)
             if gamer[4] == 100:
                 team1 += "{:2s} **{:20s}**\n".format(champ_emote, gamer[1])
-                ssteam1 += "\t{}{}\n".format(ss1_name, ss2_name)
+                ssteam1 += "\t{}{}\n".format(ss1_emote, ss2_emote)
                 rankteam1 += f"{player.solo_rank}\n"
             else:
                 team2 += f"{champ_emote} **{gamer[1]:20s}**\n"
-                ssteam2 += "\t{}{}\n".format(ss1_name, ss2_name)
+                ssteam2 += "\t{}{}\n".format(ss1_emote, ss2_emote)
                 rankteam2 += f"{player.solo_rank}\n"
         teams = team1 + team2
         ssteams = ssteam1 + ssteam2
@@ -179,8 +179,8 @@ class PantheonPlayer:
         return None
 
     def get_ss_from_id(self, id: int):
-        for spell in self.data.champions_json['data']:
-            if self.data.champions_json['data'][spell]['key'] == id:
-                print(self.data.champions_json['data'][spell]['name'])
-                return self.data.champions_json['data'][spell]['name']
+        for spell in self.data.summoner_json['data']:
+            if self.data.summoner_json['data'][spell]['key'] == id:
+                print(self.data.summoner_json['data'][spell]['name'])
+                return self.data.summoner_json['data'][spell]['name']
         return None

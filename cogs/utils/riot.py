@@ -82,10 +82,7 @@ async def get_ranks(name: str, region: str):
     try:
         region = verify_region(region)
         summoner = await lol.Summoner(name=name, platform=region).get()
-        print(summoner.league_entries.summoner_id)
         leagues = await summoner.league_entries.get()
-        print(dir(leagues))
-        print(vars(leagues))
         solo_rank = 'Unranked'
         solo_winrate = 'not enough games played'
         flex_rank = 'Unranked'
@@ -119,15 +116,14 @@ async def to_embed(name: str, region: str, data: StaticData, ctx) -> discord.Emb
     solo_rank, solo_winrate, flex_rank, flex_winrate, _, _, _, _ = await get_ranks(
         name=name, region=region)
     try:
-        game = await summoner.current_game.get()
-    except:
-        game = None
+        await summoner.current_game.get()
+    except Exception as err:
+        print(err)
     try:
-        if game.participants is not None:
-            me = None
-            for summ in game.participants:
+        await summoner.current_game.participants.get()
+        if summoner.current_game.participants is not None:
+            for summ in summoner.current_game.participants:
                 if summ.summoner_id == summoner.id:
-                    me = summ
                     break
                 champ_id = get_champ_from_id(summ.champion_id, data)
                 champ_name = get_champ_name_from_id(summ.champion_id, data)

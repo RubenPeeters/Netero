@@ -133,7 +133,7 @@ async def to_embed(name: str, region: str, data: StaticData, ctx) -> discord.Emb
                 champ_id = get_champ_from_id(summ.champion_id, data)
                 champ_name = get_champ_name_from_id(summ.champion_id, data)
                 champ_emote = get_emote_strings(champ_id, ctx.bot)
-                q_id = int(summoner.current_game.queue_id)
+                q_id = int(game.queue_id)
                 queue = None
                 for entry in data.queues_json:
                     if entry['queueId'] == q_id:

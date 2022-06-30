@@ -116,13 +116,13 @@ async def to_embed(name: str, region: str, data: StaticData, ctx) -> discord.Emb
     solo_rank, solo_winrate, flex_rank, flex_winrate, _, _, _, _ = await get_ranks(
         name=name, region=region)
     try:
-        await summoner.current_game.get()
+        game = await summoner.current_game.get()
     except Exception as err:
         print(err)
     try:
-        await summoner.current_game.participants.get()
-        if summoner.current_game.participants is not None:
-            for summ in summoner.current_game.participants:
+        participants = await game.participants.get()
+        if participants is not None:
+            for summ in participants:
                 if summ.summoner_id == summoner.id:
                     break
                 champ_id = get_champ_from_id(summ.champion_id, data)

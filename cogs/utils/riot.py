@@ -1,3 +1,5 @@
+import sys
+import traceback
 from typing import List
 from cogs.utils.exceptions import RegionException
 from .emotes import get_emote_strings
@@ -118,9 +120,11 @@ async def to_embed(name: str, region: str, data: StaticData, ctx) -> discord.Emb
     try:
         game = await summoner.current_game.get()
     except Exception as err:
-        print(err)
+        traceback.print_tb(err.__traceback__)
+        print(f'{err.__class__.__name__}: {err}',
+              file=sys.stderr)
     try:
-        participants = await game.participants.get()
+        participants = game.participants
         if participants is not None:
             for summ in participants:
                 if summ.summoner_id == summoner.id:
@@ -148,8 +152,10 @@ async def to_embed(name: str, region: str, data: StaticData, ctx) -> discord.Emb
         embed.set_thumbnail(
             url=f'http://ddragon.leagueoflegends.com/cdn/{VERSION}/img/profileicon/{summoner.profile_icon_id}.png')
         return embed
-    except Exception as e:
-        print(e)
+    except Exception as err:
+        traceback.print_tb(err.__traceback__)
+        print(f'{err.__class__.__name__}: {err}',
+              file=sys.stderr)
         return None
 
 
@@ -158,7 +164,10 @@ async def match_to_embed(name: str, region: str, data: StaticData, ctx) -> disco
     summoner = await lol.Summoner(name=name, platform=region).get()
     try:
         game = await summoner.current_game.get()
-    except:
+    except Exception as err:
+        traceback.print_tb(err.__traceback__)
+        print(f'{err.__class__.__name__}: {err}',
+              file=sys.stderr)
         game = None
     embed = discord.Embed(
         title=f'{summoner.name}s live game', color=ctx.bot.color)

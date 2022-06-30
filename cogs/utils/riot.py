@@ -125,8 +125,8 @@ async def to_embed(name: str, region: str, data: StaticData, ctx) -> discord.Emb
         print(f'{err.__class__.__name__}: {err}',
               file=sys.stderr)
     try:
-        participants = game.participants
-        if participants is not None:
+        if game is not None:
+            participants = game.participants
             for summ in participants:
                 if summ.summoner_id == summoner.id:
                     break

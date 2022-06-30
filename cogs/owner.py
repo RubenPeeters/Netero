@@ -19,7 +19,6 @@ from discord.ext.commands.converter import Greedy
 from discord.object import Object
 from .utils.context import Context
 from typing import Literal, Union, Optional
-from .utils.riot import PantheonPlayer
 from .utils.datadownloader import VERSION
 # to expose to the eval command
 import datetime

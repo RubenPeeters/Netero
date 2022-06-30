@@ -21,6 +21,14 @@ startup_cogs = [
 ]
 
 
+def _prefix_callable(bot: commands.Bot, msg: discord.Message):
+    user_id = bot.user.id
+    base = [f'<@!{user_id}> ', f'<@{user_id}> ']
+    if msg.guild is None:
+        base.append('')
+    return base
+
+
 class Netero(commands.Bot):
 
     @property
@@ -39,8 +47,8 @@ class Netero(commands.Bot):
             message_content=True,
         )
         super().__init__(
-            command_prefix='!',
-            description='Multi-functional personal slave',
+            command_prefix=_prefix_callable,
+            description=f'Bot by Ruben.',
             intents=intents,
             enable_debug_events=True,
             activity=discord.Game('/help')
@@ -54,6 +62,7 @@ class Netero(commands.Bot):
                               460817260341100556, 475616108766953482, 475630608073228290, 619836603543584769,
                               645690086893158429, 645689982677155840, 645690039908696065, 645689931313971210,
                               645690394910130217, 645690451696943124, 645690495078760469]
+        self.logging_channel = 992146724002996314
 
     async def setup_hook(self):
         for cog in startup_cogs:
@@ -109,14 +118,40 @@ class Netero(commands.Bot):
         finally:
             await ctx.release()
 
+    async def on_guild_join(self, guild: discord.Guild) -> None:
+        await self.log_guild(guild=guild, color=0x00FF00, join=True)
+
+    async def on_guild_remove(self, guild: discord.Guild) -> None:
+        await self.log_guild(guild=guild, color=0xFF0000, join=False)
+
+    async def log_guild(self, guild: discord.Guild, color, join):
+        MAX = 25
+        embed = discord.Embed(
+            colour=color, title=f'{"Joined" if join else "Left"} guild {guild.name}')
+        emojis = ""
+        count = 0
+
+        if len(guild.emojis) > MAX:
+            count = MAX
+        else:
+            count = len(guild.emojis)
+        if join:
+            for e in guild.emojis[:count]:
+                emojis += f'{str(e)} '
+        if join:
+            payload = f"```fix\n{'Members':8}: {guild.member_count}\n{'Owner':8}: {guild.owner}\n{'ID':8}: {guild.id}```{emojis} [{count}/{len(guild.emojis)}]\n"
+        else:
+            payload = f"```fix\n{'Members':8}: {guild.member_count}\n{'Owner':8} {guild.owner}\n{'ID':8}: {guild.id}\n{'Emojis':8}: {len(guild.emojis)}```"
+        embed.add_field(name='\u200b', value=payload)
+        if guild.icon:
+            embed.set_thumbnail(url=guild.icon.url)
+        log_channel = await self.fetch_channel(self.logging_channel)
+        await log_channel.send(embed=embed)
+
     async def on_message(self, message: discord.Message) -> None:
         if message.author.bot:
             return
         await self.process_commands(message)
-
-    async def on_guild_join(self, guild: discord.Guild) -> None:
-        if guild.id in self.blacklist:
-            await guild.leave()
 
     async def close(self) -> None:
         await super().close()

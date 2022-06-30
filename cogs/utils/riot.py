@@ -1,20 +1,40 @@
-
+from typing import List
+from cogs.utils.exceptions import RegionException
 from .emotes import get_emote_strings
 from pathlib import Path
-import aiofiles
-from riotwatcher import LolWatcher, ApiError
 import discord
-from discord.ext import commands
 import math
 import os
 
-from pantheon import pantheon
-import asyncio
-import asyncpg
-import config
 import json
 
+from datetime import datetime, timedelta
+
+from pyot.models import lol
+from pyot.utils.lol.routing import platform_to_region
+
 VERSION = '12.11.1'
+
+PLATFORMS = ["br1", "eun1", "euw1", "jp1", "kr",
+             "la1", "la2", "na1", "oc1", "tr1", "ru"]
+REGIONS = ["americas", "asia", "europe", "esports",
+           "ap", "br", "eu", "kr", "latam", "na"]
+PLATFORMS_TO_REGIONS = {"br1": "americas", "eun1": "europe", "euw1": "europe", "jp1": "asia", "kr": "asia",
+                        "la1": "americas", "la2": "americas", "na1": "americas", "oc1": "americas", "tr1": "europe", "ru": "europe"}
+
+INPUT_TO_PLATFORM = {
+    'br': 'br1',
+    'eune': 'eun1',
+    'euw': 'euw1',
+    'jp': 'jp1',
+    'lan': 'la1',
+    'las': 'la2',
+    'na': 'na1',
+    'oce': 'oc1',
+    'tr': 'tr1',
+    'ru': 'ru',
+    'kr': 'kr'
+}
 
 
 class StaticData:
@@ -25,6 +45,7 @@ class StaticData:
 
     def load_static(self):
         path = Path(__file__).parent
+        print(path)
         FILES_PATH = os.path.join(path, 'static', "league", "champion.json")
         if os.path.exists(FILES_PATH):
             try:
@@ -57,236 +78,224 @@ class StaticData:
         self.loaded = True
 
 
-class PantheonPlayer:
+async def get_ranks(name: str, region: str):
+    try:
+        region = verify_region(region)
+        summoner = await lol.Summoner(name=name, platform=region).get()
+        print(summoner.league_entries.summoner_id)
+        leagues = await summoner.league_entries.get()
+        print(dir(leagues))
+        print(vars(leagues))
+        solo_rank = 'Unranked'
+        solo_winrate = 'not enough games played'
+        flex_rank = 'Unranked'
+        flex_winrate = 'not enough games played'
+        solo_LP = None
+        flex_LP = None
+        flex_winrate_compact = None
+        solo_winrate_compact = None
+        for league in leagues:
+            if league.queue == 'RANKED_SOLO_5x5':
+                solo_rank = f'{league["tier"].capitalize()}  {league["rank"]} '
+                solo_winrate = str(league['wins']) + 'W/' + str(league['losses']) + 'L: ' + str(
+                    math.ceil(league['wins']/(league['wins']+league['losses'])*100)) + '% WR'
+                solo_LP = league['leaguePoints']
+                solo_winrate_compact = f"{str(math.ceil(league['wins']/(league['wins']+league['losses'])*100))}% {str(league['wins']+league['losses'])}G"
+            if league.queue == 'RANKED_FLEX_SR':
+                flex_rank = f'{league["tier"].capitalize()}  {league["rank"]} '
+                flex_winrate = str(league['wins']) + 'W/' + str(league['losses']) + 'L: ' + str(
+                    math.ceil(league['wins']/(league['wins']+league['losses'])*100)) + '% WR'
+                flex_LP = league['leaguePoints']
+                flex_winrate_compact = f"{str(math.ceil(league['wins']/(league['wins']+league['losses'])*100))}% {str(league['wins']+league['losses'])}G"
+    except Exception as e:
+        print(e)
+        raise
+    return solo_rank, solo_winrate, flex_rank, flex_winrate, solo_LP, flex_LP, flex_winrate_compact, solo_winrate_compact
 
-    def __init__(self, name: str, region: str, bot: commands.Bot):
-        self.bot = bot
-        self.name = name
-        if region.lower() == 'kr' or region.lower() == 'ru' or region.endswith('1'):
-            self.region = region
-        else:
-            self.region = region + '1'
-        self.DAO = pantheon.Pantheon(
-            self.region, config.riot_api, requests_logging_function=lambda url, status, headers: print(url, status, headers), debug=True)
-        self.player_object = None
-        self.leagues = None
-        self.current_match = None
-        self.data = StaticData()
 
-    async def initialize_player_object(self, ranks=True, match=True, data=True):
-        try:
-            if self.player_object is None:
-                self.player_object = await self.DAO.get_summoner_by_name(self.name)
-                self.summoner_id = self.player_object['id']
-                self.account_id = self.player_object['accountId']
-                self.profile_icon_id = self.player_object['profileIconId']
-                self.summoner_level = self.player_object['summonerLevel']
-                self.puuid = self.player_object['puuid']
-                self.name = self.player_object['name']
-                # initialize ranks
-                if ranks:
-                    await self.update_ranks()
-                if match:
-                    await self.get_current_match()
-                if data and not self.data.loaded:
-                    self.data.load_static()
-        except Exception as e:
-            print(e)
-
-    async def update_ranks(self):
-        try:
-            self.leagues = await self.DAO.get_league_position(self.summoner_id)
-            self.solo_rank = 'Unranked'
-            self.solo_winrate = 'not enough games played'
-            self.flex_rank = 'Unranked'
-            self.flex_winrate = 'not enough games played'
-            self.solo_LP = None
-            self.flex_LP = None
-            for league in self.leagues:
-                if league['queueType'] == 'RANKED_SOLO_5x5':
-                    self.solo_rank = f'{league["tier"].capitalize()}  {league["rank"]} '
-                    self.solo_winrate = str(league['wins']) + 'W/' + str(league['losses']) + 'L: ' + str(
-                        math.ceil(league['wins']/(league['wins']+league['losses'])*100)) + '% WR'
-                    self.solo_LP = league['leaguePoints']
-                    self.solo_winrate_compact = f"{str(math.ceil(league['wins']/(league['wins']+league['losses'])*100))}% {str(league['wins']+league['losses'])}G"
-                if league['queueType'] == 'RANKED_FLEX_SR':
-                    self.flex_rank = f'{league["tier"].capitalize()}  {league["rank"]} '
-                    self.flex_winrate = str(league['wins']) + 'W/' + str(league['losses']) + 'L: ' + str(
-                        math.ceil(league['wins']/(league['wins']+league['losses'])*100)) + '% WR'
-                    self.flex_LP = league['leaguePoints']
-                    self.flex_winrate_compact = f"{str(math.ceil(league['wins']/(league['wins']+league['losses'])*100))}% {str(league['wins']+league['losses'])}G"
-        except Exception as e:
-            print(e)
-
-    async def get_current_match(self):
-        try:
-            self.current_match = await self.DAO.get_current_game(self.summoner_id)
-        except:
-            self.current_match = None
-
-    async def getSummonerId(self, name):
-        try:
-            data = await self.DAO.get_summoner_by_name(name)
-            return (data['id'], data['puuid'])
-        except Exception as e:
-            print(e)
-
-    async def getRecentMatchlist(self, accountId, amount: int = 10):
-        try:
-            data = await self.DAO.get_matchlist(accountId, params={"start": 0, "count": amount})
-            return data
-        except Exception as e:
-            print(e)
-
-    async def getRecentMatches(self, accountId):
-        try:
-            matchlist = await self.getRecentMatchlist(accountId)
-            tasks = [self.DAO.get_match(match)
-                     for match in matchlist]
-            return await asyncio.gather(*tasks)
-        except Exception as e:
-            print(e)
-
-    # NOT NECESARRY CURRENTLY
-
-    # async def db_player_init(self, ctx):
-    #     query = """
-    #                 INSERT INTO Players (summoner_id, account_id, profile_icon_id, summoner_level, puuid, name, solo_rank, solo_winrate, flex_rank, flex_winrate, solo_LP, flex_LP)
-    #                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8,$9, $10, $11, $12);
-    #             """
-    #     try:
-    #         await ctx.db.execute(query, self.summoner_id, self.account_id, self.profile_icon_id, self.summoner_level, self.puuid, self.name, self.solo_rank, self.solo_winrate, self.flex_rank, self.flex_winrate, self.solo_LP, self.flex_LP)
-    #     except:
-    #         await ctx.send('Could not initialize player in db.')
-
-    # # will return none if not exists
-    # async def db_player_get(self, ctx):
-    #     query = """
-    #                 SELECT summoner_id, updated, account_id, profile_icon_id, summoner_level, puuid, name, solo_rank, solo_winrate, flex_rank, flex_winrate, solo_LP, flex_LP FROM Players
-    #                 WHERE summoner_id=$1;
-    #             """
-    #     row = await self.bot.pool.fetchrow(query, self.summoner_id)
-
-    #     return row
-
-    async def to_embed(self) -> discord.Embed():
-        await self.initialize_player_object()
-        try:
-            if self.current_match is not None:
-                me = None
-                for gamer in self.current_match["participants"]:
-                    if gamer['summonerId'] == self.summoner_id:
-                        me = gamer
-                        break
-                champ_id = self.get_champ_from_id(gamer['championId'])
-                champ_name = self.get_champ_name_from_id(gamer['championId'])
-                champ_emote = get_emote_strings(champ_id, self.bot)
-                q_id = int(self.current_match["gameQueueConfigId"])
+async def to_embed(name: str, region: str, data: StaticData, ctx) -> discord.Embed():
+    region = verify_region(region)
+    summoner = await lol.Summoner(name=name, platform=region).get()
+    solo_rank, solo_winrate, flex_rank, flex_winrate, _, _, _, _ = await get_ranks(
+        name=name, region=region)
+    try:
+        game = await summoner.current_game.get()
+    except:
+        game = None
+    try:
+        if game is not None:
+            me = None
+            for summ in summoner.current_game.participants:
+                if summ.summoner_id == summoner.id:
+                    me = summ
+                    break
+                champ_id = get_champ_from_id(summ.champion_id)
+                champ_name = get_champ_name_from_id(summ.champion_id)
+                champ_emote = get_emote_strings(champ_id, ctx.bot)
+                q_id = int(summoner.current_game.queue_id)
                 queue = None
-                for entry in self.data.queues_json:
+                for entry in data.queues_json:
                     if entry['queueId'] == q_id:
                         queue = entry['description']
                 match_info = f'Currently playing {queue} as {champ_emote} {champ_name}.'
-            else:
-                match_info = 'Currently not in game.'
-            embed = discord.Embed(
-                title=f'{self.name}', color=self.bot.color)
-            embed.add_field(name='Solo/duo rank',
-                            value=f'{self.solo_rank} - {self.solo_winrate}', inline=False)
-            embed.add_field(
-                name='Flex rank', value=f'{self.flex_rank} - {self.flex_winrate}', inline=False)
-            embed.add_field(name='Level',
-                            value=self.summoner_level, inline=False)
-            embed.add_field(name='LIVE', value=match_info)
-            embed.set_thumbnail(
-                url=f'http://ddragon.leagueoflegends.com/cdn/{VERSION}/img/profileicon/{self.profile_icon_id}.png')
-            return embed
-        except Exception as e:
-            print(e)
-            return None
-
-    async def match_to_embed(self) -> discord.Embed():
-        await self.initialize_player_object()
-        all_gamers = []
-
-        await self.get_current_match()
+        else:
+            match_info = 'Currently not in game.'
         embed = discord.Embed(
-            title=f'{self.name}s live game', color=self.bot.color)
-        if not self.current_match:
-            embed.add_field(name='\u200b', value='Currently not in game.')
-            return embed
-        team1 = "\n[Blue team]\n\n"
-        team2 = "\n[Red team]\n\n"
-        ssteam1 = "\n\u200b\n\n"
-        ssteam2 = "\n\u200b\n\n"
-        rankteam1 = "\n\u200b\n\n"
-        rankteam2 = "\n\u200b\n\n"
-        bansteam1 = "🟦: "
-        bansteam2 = "🟥: "
-        for gamer in self.current_match["participants"]:
-            gamer_info = [gamer["championId"], gamer["summonerName"],
-                          gamer["spell1Id"], gamer["spell2Id"], gamer["teamId"]]
-            all_gamers.append(gamer_info)
-        for gamer in all_gamers:
-            player = PantheonPlayer(gamer[1], self.region, self.bot)
-            await player.initialize_player_object()
-            champ_id = self.get_champ_from_id(gamer[0])
-            # champ_name = self.get_champ_name_from_id(gamer[0])
-            ss1_name = self.get_ss_from_id(gamer[2])
-            ss2_name = self.get_ss_from_id(gamer[3])
-            champ_emote = get_emote_strings(champ_id, self.bot)
-            ss1_emote = get_emote_strings(ss1_name, self.bot)
-            ss2_emote = get_emote_strings(ss2_name, self.bot)
-            if gamer[4] == 100:
-                if gamer[1].lower() == self.name.lower():
-                    team1 += f"{champ_emote} **{gamer[1]}**\n"
-                else:
-                    team1 += f"{champ_emote} {gamer[1]}\n"
-                ssteam1 += "\t{} {}\n".format(ss1_emote, ss2_emote)
-                rankteam1 += f"{player.solo_rank} ({player.solo_LP} LP)\n"
-            else:
-                if gamer[1].lower() == self.name.lower():
-                    team2 += f"{champ_emote} **{gamer[1]}**\n"
-                else:
-                    team2 += f"{champ_emote} {gamer[1]}\n"
-                ssteam2 += "\t{} {}\n".format(ss1_emote, ss2_emote)
-                rankteam2 += f"{player.solo_rank} ({player.solo_LP} LP)\n"
-        for i, bans in enumerate(self.current_match["bannedChampions"]):
-            ban_champ_id = self.get_champ_from_id(bans['championId'])
-            ban_champ_emote = get_emote_strings(ban_champ_id, self.bot)
-            if i <= 4:
-                bansteam1 += f"{ban_champ_emote} "
-            elif i > 4 and i < 10:
-                bansteam2 += f"{ban_champ_emote} "
-
-        teams = team1 + team2
-        ssteams = ssteam1 + ssteam2
-        rankteams = rankteam1 + rankteam2
-        bansteams = f'{bansteam1}\t - \t{bansteam2}'
-        embed.add_field(name="Teams", value=teams, inline=True)
-        embed.add_field(name="Ranks", value=rankteams, inline=True)
-        embed.add_field(name="Spells", value=ssteams, inline=True)
-        embed.add_field(name="Bans", value=bansteams, inline=True)
-        embed.set_author(
-            name=f'{self.name}', icon_url=f'http://ddragon.leagueoflegends.com/cdn/{VERSION}/img/profileicon/{self.profile_icon_id}.png')
+            title=f'{summoner.name}', color=ctx.bot.color)
+        embed.add_field(name='Solo/duo rank',
+                        value=f'{solo_rank} - {solo_winrate}', inline=False)
+        embed.add_field(
+            name='Flex rank', value=f'{flex_rank} - {flex_winrate}', inline=False)
+        embed.add_field(name='Level',
+                        value=summoner.level, inline=False)
+        embed.add_field(name='LIVE', value=match_info)
+        embed.set_thumbnail(
+            url=f'http://ddragon.leagueoflegends.com/cdn/{VERSION}/img/profileicon/{summoner.profile_icon_id}.png')
         return embed
-
-    def get_champ_from_id(self, id: int) -> str:
-        for champ in self.data.champions_json['data']:
-            if int(self.data.champions_json['data'][champ]['key']) == id:
-                return self.data.champions_json['data'][champ]['id']
-
+    except Exception as e:
+        print(e)
         return None
 
-    def get_champ_name_from_id(self, id: int) -> str:
-        for champ in self.data.champions_json['data']:
-            if int(self.data.champions_json['data'][champ]['key']) == id:
-                return self.data.champions_json['data'][champ]['name']
 
-        return None
+async def match_to_embed(name: str, region: str, data: StaticData, ctx) -> discord.Embed():
+    region = verify_region(region)
+    summoner = await lol.Summoner(name=name, platform=region).get()
+    try:
+        game = await summoner.current_game.get()
+    except:
+        game = None
+    embed = discord.Embed(
+        title=f'{summoner.name}s live game', color=ctx.bot.color)
+    if not game:
+        embed.add_field(name='\u200b', value='Currently not in game.')
+        return embed
+    team1 = "\n[Blue team]\n\n"
+    team2 = "\n[Red team]\n\n"
+    ssteam1 = "\n\u200b\n\n"
+    ssteam2 = "\n\u200b\n\n"
+    rankteam1 = "\n\u200b\n\n"
+    rankteam2 = "\n\u200b\n\n"
+    bansteam1 = "🟦: "
+    bansteam2 = "🟥: "
+    for participant in game.participants:
+        solo_rank, _, _, _, solo_LP, _, _, _ = await get_ranks(
+            name=participant.summoner_name, region=region)
+        champ_id = get_champ_from_id(participant.champion_id, data=data)
+        assert len(participant.spell_ids) == 2
+        ss1_name = get_ss_from_id(participant.spell_ids[0], data=data)
+        ss2_name = get_ss_from_id(participant.spell_ids[1], data=data)
+        champ_emote = get_emote_strings(champ_id, ctx.bot)
+        ss1_emote = get_emote_strings(ss1_name, ctx.bot)
+        ss2_emote = get_emote_strings(ss2_name, ctx.bot)
+        if participant.team_id == 100:
+            if participant.summoner_name == summoner.name:
+                team1 += f"{champ_emote} **{participant.summoner_name}**\n"
+            else:
+                team1 += f"{champ_emote} {participant.summoner_name}\n"
+            ssteam1 += "\t{} {}\n".format(ss1_emote, ss2_emote)
+            rankteam1 += f"{solo_rank} ({solo_LP} LP)\n"
+        else:
+            if participant.summoner_name == summoner.name:
+                team2 += f"{champ_emote} **{participant.summoner_name}**\n"
+            else:
+                team2 += f"{champ_emote} {participant.summoner_name}\n"
+            ssteam2 += "\t{} {}\n".format(ss1_emote, ss2_emote)
+            rankteam2 += f"{solo_rank} ({solo_LP} LP)\n"
+    for i, bans in enumerate(game.banned_champions):
+        ban_champ_id = get_champ_from_id(bans.champion_id, data=data)
+        ban_champ_emote = get_emote_strings(ban_champ_id, ctx.bot)
+        if i <= 4:
+            bansteam1 += f"{ban_champ_emote} "
+        elif i > 4 and i < 10:
+            bansteam2 += f"{ban_champ_emote} "
 
-    def get_ss_from_id(self, id: int):
-        for spell in self.data.summoner_json['data']:
-            if int(self.data.summoner_json['data'][spell]['key']) == id:
-                return self.data.summoner_json['data'][spell]['name']
-        return None
+    teams = team1 + team2
+    ssteams = ssteam1 + ssteam2
+    rankteams = rankteam1 + rankteam2
+    bansteams = f'{bansteam1}\t - \t{bansteam2}'
+    embed.add_field(name="Teams", value=teams, inline=True)
+    embed.add_field(name="Ranks", value=rankteams, inline=True)
+    embed.add_field(name="Spells", value=ssteams, inline=True)
+    embed.add_field(name="Bans", value=bansteams, inline=True)
+    embed.set_author(
+        name=f'{summoner.name}', icon_url=f'http://ddragon.leagueoflegends.com/cdn/{VERSION}/img/profileicon/{summoner.profile_icon_id}.png')
+    return embed
+
+
+def get_champ_from_id(id: int, data: StaticData) -> str:
+    for champ in data.champions_json['data']:
+        if int(data.champions_json['data'][champ]['key']) == id:
+            return data.champions_json['data'][champ]['id']
+
+    return None
+
+
+def get_champ_name_from_id(id: int, data: StaticData) -> str:
+    for champ in data.champions_json['data']:
+        if int(data.champions_json['data'][champ]['key']) == id:
+            return data.champions_json['data'][champ]['name']
+
+    return None
+
+
+def get_ss_from_id(id: int, data: StaticData):
+    for spell in data.summoner_json['data']:
+        if int(data.summoner_json['data'][spell]['key']) == id:
+            return data.summoner_json['data'][spell]['name']
+    return None
+
+
+async def get_match_ids(name: str, platform: str):
+    try:
+        summoner = await lol.Summoner(name=name, platform=platform).get()
+        match_history = await lol.MatchHistory(
+            puuid=summoner.puuid,
+            region=platform_to_region(summoner.platform)
+        ).query(
+            count=100,
+            queue=420,
+            start_time=datetime.now() - timedelta(days=200)
+        ).get()
+    except Exception as e:
+        print(str(e))
+    return match_history.ids
+
+
+def verify_region(region: str):
+    if region not in INPUT_TO_PLATFORM.keys() and region not in PLATFORMS:
+        raise RegionException(region, list(
+            INPUT_TO_PLATFORM.keys()))
+    if region in INPUT_TO_PLATFORM.keys():
+        return INPUT_TO_PLATFORM[region]
+    else:
+        return region
+
+
+async def history_to_embed(ctx, name: str, matches: List[int], data: StaticData, count: int = 10) -> discord.Embed():
+    payload = ""
+    wins = 0
+    assert count < len(matches)
+    for id in matches[0:count-1]:
+        match = await lol.Match(id=id).get()
+        for participant in match.info.participants:
+            if participant.summoner_name == name:
+                queue = None
+                for entry in data.queues_json:
+                    if entry['queueId'] == match.info.queue_id:
+                        queue = entry['description']
+                if participant.win:
+                    wins += 1
+                queue = queue.replace('5v5', '')
+                queue = queue.replace('games', '')
+                queue = queue.strip()
+                payload += f"{'🔵' if participant.win else '🔴'} : {get_emote_strings(participant.champion_name, ctx.bot)} **{participant.kills}/{participant.deaths}/{participant.assists}** {queue} **{float(participant.kills + participant.assists)/participant.deaths:.2f}** KDA \n"
+                break
+
+    embed = discord.Embed(
+        title=f'Match history', color=ctx.bot.color)
+    embed.set_author(
+        name=f'{name}', icon_url=f'http://ddragon.leagueoflegends.com/cdn/{VERSION}/img/profileicon/{participant.profile_icon_id}.png')
+    embed.add_field(name='\u200b', value=f"{payload}")
+    embed.set_footer(
+        text=f'{(float(wins)/count)*100:.2f}% WR in last {count} games.')
+    return embed

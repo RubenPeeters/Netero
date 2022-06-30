@@ -120,6 +120,7 @@ async def to_embed(name: str, region: str, data: StaticData, ctx) -> discord.Emb
     try:
         game = await summoner.current_game.get()
     except Exception as err:
+        game = None
         traceback.print_tb(err.__traceback__)
         print(f'{err.__class__.__name__}: {err}',
               file=sys.stderr)

@@ -288,7 +288,10 @@ async def history_to_embed(ctx, name: str, matches: List[int], data: StaticData,
                 queue = queue.replace('5v5', '')
                 queue = queue.replace('games', '')
                 queue = queue.strip()
-                payload += f"{'🔵' if participant.win else '🔴'} : {get_emote_strings(participant.champion_name, ctx.bot)} **{participant.kills}/{participant.deaths}/{participant.assists}** {queue} **{float(participant.kills + participant.assists)/participant.deaths if participant.deaths != 0 else 'Perfect':.2f}** KDA \n"
+                if participant.deaths != 0:
+                    payload += f"{'🔵' if participant.win else '🔴'} : {get_emote_strings(participant.champion_name, ctx.bot)} **{participant.kills}/{participant.deaths}/{participant.assists}** {queue} **{float(participant.kills + participant.assists)/participant.deaths:.2f}** KDA \n"
+                else:
+                    payload += f"{'🔵' if participant.win else '🔴'} : {get_emote_strings(participant.champion_name, ctx.bot)} **{participant.kills}/{participant.deaths}/{participant.assists}** {queue} **Perfect** KDA \n"
                 break
 
     embed = discord.Embed(

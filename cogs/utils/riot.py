@@ -123,9 +123,9 @@ async def to_embed(name: str, region: str, data: StaticData, ctx) -> discord.Emb
     except:
         game = None
     try:
-        if game is not None:
+        if game.participants is not None:
             me = None
-            for summ in summoner.current_game.participants:
+            for summ in game.participants:
                 if summ.summoner_id == summoner.id:
                     me = summ
                     break

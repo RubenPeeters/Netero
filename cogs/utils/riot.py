@@ -297,5 +297,5 @@ async def history_to_embed(ctx, name: str, matches: List[int], data: StaticData,
         name=f'{name}', icon_url=f'http://ddragon.leagueoflegends.com/cdn/{VERSION}/img/profileicon/{participant.profile_icon_id}.png')
     embed.add_field(name='\u200b', value=f"{payload}")
     embed.set_footer(
-        text=f'{(float(wins)/count)*100:.2f}% WR in last {count} games.')
+        text=f'{(float(wins)/count)*100 if count != 0 else 100.0:.2f}% WR in last {count} games.')
     return embed

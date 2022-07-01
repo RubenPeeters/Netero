@@ -45,11 +45,11 @@ class GroupHelpPageSource(menus.ListPageSource):
                 for subcommand in command.commands:
                     signature = f'{subcommand.qualified_name} {subcommand.signature}'
                     embed.add_field(
-                        name=f'**{signature}**', value=f'```{subcommand.short_doc or "No help given..."}```', inline=False)
+                        name=f'**{menu.ctx.clean_prefix}{signature}**', value=f'```{subcommand.short_doc or "No help given..."}```', inline=False)
             else:
                 signature = f'{command.qualified_name} {command.signature}'
                 embed.add_field(
-                    name=f'**{signature}**', value=f'```{command.short_doc or "No help given..."}```', inline=False)
+                    name=f'**{menu.ctx.clean_prefix}{signature}**', value=f'```{command.short_doc or "No help given..."}```', inline=False)
         maximum = self.get_max_pages()
         if maximum > 1:
             embed.set_author(
@@ -57,7 +57,7 @@ class GroupHelpPageSource(menus.ListPageSource):
         embed.set_thumbnail(
             url='https://github.com/RubenPeeters/Netero/blob/main/cogs/assets/netero_thumbnail.jpg?raw=true')
         embed.set_footer(
-            text=f'Use "/help command" for more info on a command.')
+            text=f'Use "{menu.ctx.clean_prefix}help command" for more info on a command.')
         return embed
 
 
@@ -164,7 +164,7 @@ class FrontPageSource(menus.PageSource):
             for name, value in entries:
                 embed.add_field(name=name, value=value, inline=False)
         embed.set_footer(
-            text=f'The prefixes for the bot are "/" and "!"')
+            text=f'In a DM, you don\'t need to use a prefix. Just type "help".')
         return embed
 
 

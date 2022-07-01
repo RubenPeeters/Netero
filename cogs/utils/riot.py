@@ -280,8 +280,11 @@ async def history_to_embed(ctx, name: str, matches: List[int], data: StaticData,
     payload = ""
     wins = 0
     me = None
-    assert count < len(matches)
-    for id in matches[0:count]:
+    if count < len(matches):
+        amount = count
+    else:
+        amount = len(matches)
+    for id in matches[0:amount]:
         match = await lol.Match(id=id).get()
         for participant in match.info.participants:
             if participant.summoner_name.lower() == name.lower():

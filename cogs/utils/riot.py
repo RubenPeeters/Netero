@@ -130,15 +130,15 @@ async def to_embed(name: str, region: str, data: StaticData, ctx) -> discord.Emb
             for summ in participants:
                 if summ.summoner_id == summoner.id:
                     break
-                champ_id = get_champ_from_id(summ.champion_id, data)
-                champ_name = get_champ_name_from_id(summ.champion_id, data)
-                champ_emote = get_emote_strings(champ_id, ctx.bot)
-                q_id = int(game.queue_id)
-                queue = None
-                for entry in data.queues_json:
-                    if entry['queueId'] == q_id:
-                        queue = entry['description']
-                match_info = f'Currently playing {queue} as {champ_emote} {champ_name}.'
+            champ_id = get_champ_from_id(summ.champion_id, data)
+            champ_name = get_champ_name_from_id(summ.champion_id, data)
+            champ_emote = get_emote_strings(champ_id, ctx.bot)
+            q_id = int(game.queue_id)
+            queue = None
+            for entry in data.queues_json:
+                if entry['queueId'] == q_id:
+                    queue = entry['description']
+            match_info = f'Currently playing {queue} as {champ_emote} {champ_name}.'
         else:
             match_info = 'Currently not in game.'
         embed = discord.Embed(
@@ -259,7 +259,6 @@ async def get_match_ids(name: str, platform: str):
             region=platform_to_region(summoner.platform)
         ).query(
             count=100,
-            queue=420,
             start_time=datetime.now() - timedelta(days=200)
         ).get()
     except Exception as e:
@@ -280,12 +279,14 @@ def verify_region(region: str):
 async def history_to_embed(ctx, name: str, matches: List[int], data: StaticData, count: int = 10) -> discord.Embed():
     payload = ""
     wins = 0
+    me = None
     assert count < len(matches)
     for id in matches[0:count]:
         match = await lol.Match(id=id).get()
         for participant in match.info.participants:
-            if participant.summoner_name == name:
+            if participant.summoner_name.lower() == name.lower():
                 queue = None
+                me = participant
                 for entry in data.queues_json:
                     if entry['queueId'] == match.info.queue_id:
                         queue = entry['description']
@@ -299,12 +300,10 @@ async def history_to_embed(ctx, name: str, matches: List[int], data: StaticData,
                 else:
                     payload += f"{'🔵' if participant.win else '🔴'} : {get_emote_strings(participant.champion_name, ctx.bot)} **{participant.kills}/{participant.deaths}/{participant.assists}** {queue} **Perfect** KDA \n"
                 break
-
-    embed = discord.Embed(
-        title=f'Match history', color=ctx.bot.color)
+    embed = discord.Embed(color=ctx.bot.color)
     embed.set_author(
-        name=f'{name}', icon_url=f'http://ddragon.leagueoflegends.com/cdn/{VERSION}/img/profileicon/{participant.profile_icon_id}.png')
-    embed.add_field(name='\u200b', value=f"{payload}")
+        name=f'{me.summoner_name}', icon_url=f'http://ddragon.leagueoflegends.com/cdn/{VERSION}/img/profileicon/{participant.profile_icon_id}.png')
+    embed.add_field(name='Match history', value=f"{payload}")
     embed.set_footer(
-        text=f'{(float(wins)/count)*100 if count != 0 else 100.0:.2f}% WR in last {count} games.')
+        text=f'{(float(wins)/count)*100 if wins - count != 0 else 100.0:.2f}% WR in last {count} games.')
     return embed

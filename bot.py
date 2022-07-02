@@ -1,7 +1,7 @@
 from typing import Union
 import discord
 from discord import activity
-from discord.ext import commands
+from discord.ext import commands, ipc
 from cogs.utils.context import Context
 import traceback
 import logging
@@ -17,7 +17,8 @@ startup_cogs = [
     'cogs.league',
     'cogs.stats',
     'cogs.owner',
-    'cogs.info'
+    'cogs.info',
+    'cogs.ipc'
 ]
 
 
@@ -63,6 +64,8 @@ class Netero(commands.Bot):
                               645690086893158429, 645689982677155840, 645690039908696065, 645689931313971210,
                               645690394910130217, 645690451696943124, 645690495078760469]
         self.logging_channel = 992146724002996314
+        # create our IPC Server
+        self.ipc = ipc.Server(self, secret_key=config.secret_key)
 
     async def setup_hook(self):
         for cog in startup_cogs:
@@ -97,6 +100,14 @@ class Netero(commands.Bot):
             self.uptime = discord.utils.utcnow()
 
         log.info(f'Ready: {self.user} (ID: {self.user.id})')
+
+    async def on_ipc_ready(self):
+        """Called upon the IPC Server being ready"""
+        print("Ipc is ready.")
+
+    async def on_ipc_error(self, endpoint, error):
+        """Called upon an error being raised within an IPC route"""
+        print(endpoint, "raised", error)
 
     async def get_context(self, origin: Union[discord.Interaction, discord.Message], /, *, cls=Context) -> Context:
         return await super().get_context(origin, cls=cls)

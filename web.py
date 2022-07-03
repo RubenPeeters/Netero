@@ -8,7 +8,7 @@ import config
 
 
 app = Quart(__name__)
-ipc_client = ipc.Client(host=config.host, port=config.port,
+ipc_client = ipc.Client(host=config.host, port=config.client_port,
                         secret_key=config.secret_key)
 app.config["SECRET_KEY"] = config.secret_key
 app.config["DISCORD_CLIENT_ID"] = config.client_id

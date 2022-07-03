@@ -6,11 +6,15 @@ class IpcRoutes(commands.Cog):
         self.bot = bot
 
     @ipc.server.route()
-    async def get_member_count(self, data):
-        # get the guild object using parsed guild_id
-        guild = self.bot.get_guild(data.guild_id)
+    async def get_guild_count(self, data):
+        return len(self.guilds)
 
-        return guild.member_count  # return the member count to the client
+    @ipc.server.route()
+    async def get_guild_ids(self, data):
+        final = []
+        for guild in self.guilds:
+            final.append(guild.id)
+        return final  # returns the guild ids to the client
 
 
 async def setup(bot):

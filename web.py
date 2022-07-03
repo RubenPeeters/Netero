@@ -1,3 +1,4 @@
+import asyncio
 from quart import Quart, render_template, request, session, redirect, url_for
 from quart_discord import DiscordOAuth2Session
 from discord.ext import ipc
@@ -7,7 +8,8 @@ import config
 
 
 app = Quart(__name__)
-ipc_client = ipc.Client(secret_key=config.secret_key)
+ipc_client = ipc.Client(host=config.host, port=config.port,
+                        secret_key=config.secret_key)
 app.config["SECRET_KEY"] = config.secret_key
 app.config["DISCORD_CLIENT_ID"] = config.client_id
 app.config["DISCORD_CLIENT_SECRET"] = config.client_secret
@@ -70,4 +72,14 @@ async def dashboard_server(guild_id):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    try:
+        # `Client.start()` returns new Client instance or None if it fails to start
+        app.ipc = loop.run_until_complete(ipc_client.start(loop=loop))
+        app.run(loop=loop)
+    finally:
+        # Closes the session, doesn't close the loop
+        loop.run_until_complete(app.ipc.close())
+        loop.close()

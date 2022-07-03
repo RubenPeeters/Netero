@@ -65,7 +65,6 @@ class Netero(commands.Bot):
                               645690394910130217, 645690451696943124, 645690495078760469]
         self.logging_channel = 992146724002996314
         # create our IPC Server
-        self.ipc = ipc.Server(self, secret_key=config.secret_key)
 
     async def setup_hook(self):
         for cog in startup_cogs:
@@ -75,7 +74,6 @@ class Netero(commands.Bot):
             except Exception as e:
                 log.warn(f'Failed to load {cog}.')
                 traceback.print_exc()
-        await self.ipc.start()
 
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError) -> None:
         if isinstance(error, commands.NoPrivateMessage):

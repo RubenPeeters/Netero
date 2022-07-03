@@ -1,9 +1,14 @@
 from discord.ext import commands, ipc
+import config
 
 
 class IpcRoutes(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        if not hasattr(bot, "ipc"):
+            bot.ipc = ipc.Server(self.bot, host=config.host,
+                                 port=80, secret_key=config.secret_key)
+            bot.ipc.start(self)
 
     @ipc.server.route()
     async def get_guild_count(self, data):

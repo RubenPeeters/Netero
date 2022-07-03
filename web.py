@@ -45,8 +45,8 @@ async def dashboard():
     if not await discord.authorized:
         return redirect(url_for("login"))
 
-    guild_count = await ipc_client.request("get_guild_count")
-    guild_ids = await ipc_client.request("get_guild_ids")
+    guild_count = await app.ipc.request("get_guild_count")
+    guild_ids = await app.ipc.request("get_guild_ids")
 
     user_guilds = await discord.fetch_guilds()
 
@@ -67,24 +67,20 @@ async def dashboard_server(guild_id):
     if not await discord.authorized:
         return redirect(url_for("login"))
 
-    guild = await ipc_client.request("get_guild", guild_id=guild_id)
+    guild = await app.ipc.request("get_guild", guild_id=guild_id)
     if guild is None:
         return redirect(f'https://discord.com/oauth2/authorize?&client_id={app.config["DISCORD_CLIENT_ID"]}&scope=bot&permissions=8&guild_id={guild_id}&response_type=code&redirect_uri={app.config["DISCORD_REDIRECT_URI"]}')
     return guild["name"]
 
-if __name__ == '__main__':
-
-    loop = asyncio.get_event_loop() or asyncio.new_event_loop()
-    config = Config()
-    config.bind = ["localhost:8080"]  # As an example configuration setting
-    try:
-        # `Client.start()` returns new Client instance or None if it fails to start
-        print('start')
-        app.ipc = loop.run_until_complete(ipc_client.start(loop=loop))
-        loop.run_until_complete(
-            serve(app, config)
-        )
-    finally:
-        # Closes the session, doesn't close the loop
-        loop.run_until_complete(app.ipc.close())
-        loop.close()
+loop = asyncio.get_event_loop() or asyncio.new_event_loop()
+try:
+    # `Client.start()` returns new Client instance or None if it fails to start
+    print('start app ipc')
+    app.ipc = loop.run_until_complete(ipc_client.start(loop=loop))
+    loop.run_until_complete(
+        serve(app, config)
+    )
+finally:
+    # Closes the session, doesn't close the loop
+    loop.run_until_complete(app.ipc.close())
+    loop.close()

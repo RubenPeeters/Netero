@@ -74,7 +74,7 @@ async def dashboard_server(guild_id):
 if __name__ == "__main__":
     loop = asyncio.get_event_loop() or asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-
+    print('start')
     try:
         # `Client.start()` returns new Client instance or None if it fails to start
         print('start')

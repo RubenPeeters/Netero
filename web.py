@@ -78,7 +78,8 @@ if __name__ == '__main__':
     try:
         # `Client.start()` returns new Client instance or None if it fails to start
         print('start app ipc')
-        app.ipc = asyncio.run(ipc_client.start(loop=loop))
+        app.ipc = loop.run_until_complete(ipc_client.start(loop=loop))
+        loop.run_until_complete(serve(app, app.config))
     finally:
         # Closes the session, doesn't close the loop
         loop.run_until_complete(app.ipc.close())

@@ -13,5 +13,5 @@ class IpcRoutes(commands.Cog):
         return guild.member_count  # return the member count to the client
 
 
-def setup(bot):
+async def setup(bot):
     bot.add_cog(IpcRoutes(bot))

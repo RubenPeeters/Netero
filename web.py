@@ -2,7 +2,9 @@ import asyncio
 from quart import Quart, render_template, request, session, redirect, url_for
 from quart_discord import DiscordOAuth2Session
 from discord.ext import ipc
-
+import asyncio
+from hypercorn.config import Config
+from hypercorn.asyncio import serve
 
 import config
 
@@ -70,16 +72,19 @@ async def dashboard_server(guild_id):
         return redirect(f'https://discord.com/oauth2/authorize?&client_id={app.config["DISCORD_CLIENT_ID"]}&scope=bot&permissions=8&guild_id={guild_id}&response_type=code&redirect_uri={app.config["DISCORD_REDIRECT_URI"]}')
     return guild["name"]
 
+if __name__ == '__main__':
 
-print('start')
-loop = asyncio.get_event_loop() or asyncio.new_event_loop()
-print('start')
-try:
-    # `Client.start()` returns new Client instance or None if it fails to start
-    print('start')
-    app.ipc = loop.run_until_complete(ipc_client.start(loop=loop))
-    app.run(loop=loop)
-finally:
-    # Closes the session, doesn't close the loop
-    loop.run_until_complete(app.ipc.close())
-    loop.close()
+    loop = asyncio.get_event_loop() or asyncio.new_event_loop()
+    config = Config()
+    config.bind = ["localhost:8080"]  # As an example configuration setting
+    try:
+        # `Client.start()` returns new Client instance or None if it fails to start
+        print('start')
+        app.ipc = loop.run_until_complete(ipc_client.start(loop=loop))
+        loop.run_until_complete(
+            serve(app, config)
+        )
+    finally:
+        # Closes the session, doesn't close the loop
+        loop.run_until_complete(app.ipc.close())
+        loop.close()

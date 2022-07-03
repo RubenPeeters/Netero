@@ -75,7 +75,7 @@ class Netero(commands.Bot):
             except Exception as e:
                 log.warn(f'Failed to load {cog}.')
                 traceback.print_exc()
-        self.ipc.start()
+        # self.ipc.start()
 
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError) -> None:
         if isinstance(error, commands.NoPrivateMessage):

@@ -18,4 +18,4 @@ class IpcRoutes(commands.Cog):
 
 
 async def setup(bot):
-    bot.add_cog(IpcRoutes(bot))
+    await bot.add_cog(IpcRoutes(bot))

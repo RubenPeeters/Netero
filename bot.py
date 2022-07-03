@@ -77,16 +77,16 @@ class Netero(commands.Bot):
                 traceback.print_exc()
         self.ipc.start()
 
-    @commands.ipc.route()
-    async def get_guild_count(self, data):
-        return len(self.guilds)
+    # @commands.ipc.route()
+    # async def get_guild_count(self, data):
+    #     return len(self.guilds)
 
-    @commands.ipc.route()
-    async def get_guild_ids(self, data):
-        final = []
-        for guild in self.guilds:
-            final.append(guild.id)
-        return final  # returns the guild ids to the client
+    # @commands.ipc.route()
+    # async def get_guild_ids(self, data):
+    #     final = []
+    #     for guild in self.guilds:
+    #         final.append(guild.id)
+    #     return final  # returns the guild ids to the client
 
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError) -> None:
         if isinstance(error, commands.NoPrivateMessage):

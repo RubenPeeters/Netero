@@ -71,7 +71,7 @@ async def dashboard_server(guild_id):
     return guild["name"]
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     print('start')
     loop = asyncio.get_event_loop() or asyncio.new_event_loop()
     print('start')

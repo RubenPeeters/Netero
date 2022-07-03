@@ -1,7 +1,7 @@
 from quart import Quart, render_template, request, session, redirect, url_for
 from quart_discord import DiscordOAuth2Session
 from discord.ext import ipc
-import discord
+
 
 import config
 
@@ -12,6 +12,8 @@ app.config["SECRET_KEY"] = config.secret_key
 app.config["DISCORD_CLIENT_ID"] = config.client_id
 app.config["DISCORD_CLIENT_SECRET"] = config.client_secret
 app.config["DISCORD_REDIRECT_URI"] = config.redirect_uri
+
+discord = DiscordOAuth2Session(app)
 
 
 @app.route("/")

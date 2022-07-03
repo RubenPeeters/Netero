@@ -77,9 +77,6 @@ try:
     # `Client.start()` returns new Client instance or None if it fails to start
     print('start app ipc')
     app.ipc = loop.run_until_complete(ipc_client.start(loop=loop))
-    loop.run_until_complete(
-        serve(app, config)
-    )
 finally:
     # Closes the session, doesn't close the loop
     loop.run_until_complete(app.ipc.close())

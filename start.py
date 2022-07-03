@@ -115,8 +115,19 @@ async def start():
     # discord.py 2.0
     async with aiohttp.ClientSession() as session:
         async with bot:
-            bot.session = session
-            await bot.start()
+
+            @bot.ipc.route()
+            async def get_guild_count(data):
+                return len(bot.guilds)
+
+            @bot.ipc.route()
+            async def get_guild_ids(data):
+                final = []
+                for guild in bot.guilds:
+                    final.append(guild.id)
+        return final  # returns the guild ids to the client
+        bot.session = session
+        await bot.start()
 
 
 @click.group(invoke_without_command=True, options_metavar='[options]')

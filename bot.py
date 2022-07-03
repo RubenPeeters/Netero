@@ -113,17 +113,6 @@ class Netero(commands.Bot):
     async def get_context(self, origin: Union[discord.Interaction, discord.Message], /, *, cls=Context) -> Context:
         return await super().get_context(origin, cls=cls)
 
-    @ipc.route()
-    async def get_guild_count(self, data):
-        return len(self.guilds)  # returns the len of the guilds to the client
-
-    @ipc.route()
-    async def get_guild_ids(self, data):
-        final = []
-        for guild in self.guilds:
-            final.append(guild.id)
-        return final  # returns the guild ids to the client
-
     async def process_commands(self, message: discord.Message):
         ctx = await self.get_context(message, cls=Context)
 

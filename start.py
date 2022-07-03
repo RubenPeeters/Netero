@@ -125,7 +125,7 @@ async def start():
                 final = []
                 for guild in bot.guilds:
                     final.append(guild.id)
-        return final  # returns the guild ids to the client
+                return final  # returns the guild ids to the client
         bot.session = session
         await bot.start()
 

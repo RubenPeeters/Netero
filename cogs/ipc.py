@@ -7,7 +7,7 @@ class IpcRoutes(commands.Cog):
         self.bot = bot
         if not hasattr(bot, "ipc"):
             bot.ipc = ipc.Server(self.bot, host=config.host,
-                                 port=80, secret_key=config.secret_key)
+                                 port=config.port, secret_key=config.secret_key)
             bot.ipc.start()
 
     @ipc.server.route()

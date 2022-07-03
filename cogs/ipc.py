@@ -10,6 +10,14 @@ class IpcRoutes(commands.Cog):
                                  port=config.port, secret_key=config.secret_key)
             bot.ipc.start()
 
+    async def on_ipc_ready(self):
+        """Called upon the IPC Server being ready"""
+        print("Ipc is ready.")
+
+    async def on_ipc_error(self, endpoint, error):
+        """Called upon an error being raised within an IPC route"""
+        print(endpoint, "raised", error)
+
     @ipc.server.route()
     async def get_guild_count(self, data):
         return len(self.guilds)

@@ -71,16 +71,15 @@ async def dashboard_server(guild_id):
     return guild["name"]
 
 
-if __name__ == '__main__':
+print('start')
+loop = asyncio.get_event_loop() or asyncio.new_event_loop()
+print('start')
+try:
+    # `Client.start()` returns new Client instance or None if it fails to start
     print('start')
-    loop = asyncio.get_event_loop() or asyncio.new_event_loop()
-    print('start')
-    try:
-        # `Client.start()` returns new Client instance or None if it fails to start
-        print('start')
-        app.ipc = loop.run_until_complete(ipc_client.start(loop=loop))
-        app.run(loop=loop)
-    finally:
-        # Closes the session, doesn't close the loop
-        loop.run_until_complete(app.ipc.close())
-        loop.close()
+    app.ipc = loop.run_until_complete(ipc_client.start(loop=loop))
+    app.run(loop=loop)
+finally:
+    # Closes the session, doesn't close the loop
+    loop.run_until_complete(app.ipc.close())
+    loop.close()

@@ -17,8 +17,6 @@ app.config["DISCORD_REDIRECT_URI"] = config.redirect_uri
 
 discord = DiscordOAuth2Session(app)
 
-await ipc_client.start()
-
 
 @app.route("/")
 async def home():

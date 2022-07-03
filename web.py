@@ -43,8 +43,8 @@ async def dashboard():
     if not await discord.authorized:
         return redirect(url_for("login"))
 
-    guild_count = await ipc_client.request("get_guild_count")
-    guild_ids = await ipc_client.request("get_guild_ids")
+    guild_count = await app.ipc.request("get_guild_count")
+    guild_ids = await app.ipc.request("get_guild_ids")
 
     user_guilds = await discord.fetch_guilds()
 
@@ -65,7 +65,7 @@ async def dashboard_server(guild_id):
     if not await discord.authorized:
         return redirect(url_for("login"))
 
-    guild = await ipc_client.request("get_guild", guild_id=guild_id)
+    guild = await app.ipc.request("get_guild", guild_id=guild_id)
     if guild is None:
         return redirect(f'https://discord.com/oauth2/authorize?&client_id={app.config["DISCORD_CLIENT_ID"]}&scope=bot&permissions=8&guild_id={guild_id}&response_type=code&redirect_uri={app.config["DISCORD_REDIRECT_URI"]}')
     return guild["name"]

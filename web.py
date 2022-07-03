@@ -31,7 +31,7 @@ async def callback():
     try:
         await discord.callback()
     except Exception:
-        pass
+        return redirect(url_for("login"))
 
     return redirect(url_for("dashboard"))
 

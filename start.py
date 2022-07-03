@@ -126,8 +126,8 @@ async def start():
                 for guild in bot.guilds:
                     final.append(guild.id)
                 return final  # returns the guild ids to the client
-        bot.session = session
-        await bot.start()
+            bot.session = session
+            await bot.start()
 
 
 @click.group(invoke_without_command=True, options_metavar='[options]')

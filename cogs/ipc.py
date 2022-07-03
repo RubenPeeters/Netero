@@ -8,7 +8,7 @@ class IpcRoutes(commands.Cog):
         if not hasattr(bot, "ipc"):
             bot.ipc = ipc.Server(self.bot, host=config.host,
                                  port=80, secret_key=config.secret_key)
-            bot.ipc.start(self)
+            bot.ipc.start()
 
     @ipc.server.route()
     async def get_guild_count(self, data):

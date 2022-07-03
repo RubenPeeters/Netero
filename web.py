@@ -72,12 +72,14 @@ async def dashboard_server(guild_id):
         return redirect(f'https://discord.com/oauth2/authorize?&client_id={app.config["DISCORD_CLIENT_ID"]}&scope=bot&permissions=8&guild_id={guild_id}&response_type=code&redirect_uri={app.config["DISCORD_REDIRECT_URI"]}')
     return guild["name"]
 
-loop = asyncio.get_event_loop() or asyncio.new_event_loop()
-try:
-    # `Client.start()` returns new Client instance or None if it fails to start
-    print('start app ipc')
-    app.ipc = asyncio.run(ipc_client.start(loop=loop))
-finally:
-    # Closes the session, doesn't close the loop
-    loop.run_until_complete(app.ipc.close())
-    loop.close()
+
+if __name__ == '__main__':
+    loop = asyncio.get_event_loop() or asyncio.new_event_loop()
+    try:
+        # `Client.start()` returns new Client instance or None if it fails to start
+        print('start app ipc')
+        app.ipc = asyncio.run(ipc_client.start(loop=loop))
+    finally:
+        # Closes the session, doesn't close the loop
+        loop.run_until_complete(app.ipc.close())
+        loop.close()

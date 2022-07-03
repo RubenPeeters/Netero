@@ -78,6 +78,7 @@ if __name__ == "__main__":
     try:
         # `Client.start()` returns new Client instance or None if it fails to start
         app.ipc = loop.run_until_complete(ipc_client.start(loop=loop))
+        print(app.ipc)
         app.run(loop=loop)
     finally:
         # Closes the session, doesn't close the loop

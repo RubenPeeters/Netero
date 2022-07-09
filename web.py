@@ -75,15 +75,15 @@ async def dashboard_server(guild_id):
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop() or asyncio.new_event_loop()
-    config = Config()
-    config.bind = [f"{config.host}:80"]
+    serve_config = Config()
+    serve_config.bind = [f"{config.host}:80"]
     print(ipc_client)
     try:
         # `Client.start()` returns new Client instance or None if it fails to start
         print('start app ipc')
         app.ipc = loop.run_until_complete(ipc_client.start(loop=loop))
         print('start serving')
-        loop.run_until_complete(serve(app, config))
+        loop.run_until_complete(serve(app, serve_config))
     finally:
         # Closes the session, doesn't close the loop
         loop.run_until_complete(app.ipc.close())

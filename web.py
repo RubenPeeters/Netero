@@ -1,4 +1,5 @@
 import asyncio
+from asyncio.log import logger
 from quart import Quart, render_template, request, session, redirect, url_for
 from quart_discord import DiscordOAuth2Session
 from discord.ext import ipc
@@ -6,8 +7,12 @@ import asyncio
 from hypercorn.config import Config
 from hypercorn.asyncio import serve
 
+import logging
+
 import config
 
+
+log = logging.getLogger(__name__)
 
 app = Quart(__name__)
 ipc_client = ipc.Client(host=config.host, port=config.client_port,
@@ -83,7 +88,8 @@ if __name__ == '__main__':
     try:
         # `Client.start()` returns new Client instance or None if it fails to start
         print('start app ipc')
-        app.ipc = loop.run_until_complete(ipc_client.start(loop=loop))
+        app.ipc = loop.run_until_complete(
+            ipc_client.start(loop=loop, logger=log))
         print('start serving')
         loop.run_until_complete(serve(app, serve_config))
     finally:

@@ -1,8 +1,9 @@
 body {
     /* background-image: url("netero_thumbnail.jpg"); */
     background-size: 100%;
-    color: rgb(53, 52, 52);
+    color: #353434;
     font-family: cursive;
+    background-color: #2b2b2a;
 }
 
 h1,
@@ -12,7 +13,7 @@ h2 {
 
 .picker {
     margin: 2em;
-    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 8px 0 #da9f31;
     background-color: #da9f31;
     border-radius: 3px;
 }
@@ -38,8 +39,8 @@ h2 {
 }
 
 .card:hover {
-    box-shadow: rgba(2, 8, 20, 0.1) 0px 0.35em 1.175em,
-        rgba(2, 8, 20, 0.08) 0px 0.175em 0.5em;
+    box-shadow: #0208141a 0px 0.35em 1.175em,
+        #02081414 0px 0.175em 0.5em;
     transform: scale(1.1);
 }
 
@@ -79,7 +80,7 @@ li {
     align-items: center;
     justify-content: space-between;
     padding: 20px;
-    background-color: rgb(43, 43, 42);
+    background-color: #2b2b2a;
     color: #da9f31;
 }
 

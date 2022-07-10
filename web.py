@@ -22,7 +22,7 @@ app.config["DISCORD_CLIENT_ID"] = config.client_id
 app.config["DISCORD_CLIENT_SECRET"] = config.client_secret
 app.config["DISCORD_REDIRECT_URI"] = config.redirect_uri
 app.config["DEBUG"] = True
-app.config["TESTING"] = False
+app.config["TESTING"] = True
 
 discord = DiscordOAuth2Session(app)
 

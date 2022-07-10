@@ -83,7 +83,7 @@ async def dashboard_server(guild_id):
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     serve_config = Config()
-    serve_config.bind = [f"{config.public_ip}:80"]
+    serve_config.bind = [f"{config.public_ip}:{config.public_port}"]
     print(ipc_client)
     try:
         # `Client.start()` returns new Client instance or None if it fails to start

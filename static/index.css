@@ -69,6 +69,10 @@ h2 {
 }
 
 
+a {
+    text-decoration: none;
+}
+
 a.nostyle:link {
     text-decoration: inherit;
     color: inherit;

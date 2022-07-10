@@ -52,13 +52,8 @@
             </div>
         </ul>
     </nav>
-    <p align="center">
-        {% if not authorized %}
-        <a href="/login"><button>Login with discord</button></a>
-        {% else %}
-        <a href="/dashboard"><button>Open Dashboard</button></a>
-        {%endif %}
-    </p>
+    <h2>{{guild_count}} servers</h2>
+
 </body>
 
 </html>

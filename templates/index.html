@@ -26,6 +26,29 @@
 </head>
 
 <body>
+    <nav class="navbar">
+        <!-- LOGO -->
+        <div class="logo">MUO</div>
+        <!-- NAVIGATION MENU -->
+        <ul class="nav-links">
+            <!-- USING CHECKBOX HACK -->
+            <input type="checkbox" id="checkbox_toggle" />
+            <label for="checkbox_toggle" class="hamburger">&#9776;</label>
+            <!-- NAVIGATION MENUS -->
+            <div class="menu">
+                <li><a href="/">Home</a></li>
+                <li><a href="/">Docs</a></li>
+                <li><a href="/">Invite</a></li>
+                <li><a href="/">Discord</a></li>
+                <li>{% if not authorized %}
+                    <a href="/login"><button>Login</button></a>
+                    {% else %}
+                    <a href="/dashboard"><button>Dashboard</button></a>
+                    {%endif %}
+                </li>
+            </div>
+        </ul>
+    </nav>
     <h1 align="center">Welcome!</h1>
     <p align="center">
         {% if not authorized %}

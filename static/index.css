@@ -25,6 +25,7 @@ h2 {
 }
 
 .cards {
+    color: #da9f31;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     justify-items: center;

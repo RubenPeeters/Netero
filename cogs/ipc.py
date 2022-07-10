@@ -1,3 +1,4 @@
+from wsgiref.simple_server import WSGIRequestHandler
 from discord.ext import commands, ipc
 import config
 
@@ -27,6 +28,7 @@ class IpcRoutes(commands.Cog):
         final = []
         for guild in self.bot.guilds:
             final.append(guild.id)
+        print(final)
         return final  # returns the guild ids to the client
 
     @ipc.server.route()

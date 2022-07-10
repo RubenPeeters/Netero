@@ -11,7 +11,7 @@ h2 {
 }
 
 .picker {
-    margin: 2em;
+    margin: 10em;
     box-shadow: 0 4px 8px 0 #da9f31;
     background-color: #353434;
     border-radius: 3px;
@@ -22,6 +22,7 @@ h2 {
     padding-top: 2%;
     font-family: Georgia, "Times New Roman", Times, serif;
     font-size: 1.5em;
+    color: #da9f31;
 }
 
 .cards {

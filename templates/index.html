@@ -41,15 +41,14 @@
                 <li><a href="/">Invite</a></li>
                 <li><a href="/">Discord</a></li>
                 <li>{% if not authorized %}
-                    <a href="/login"><button>Login</button></a>
+                    <a href="/login">Login</a>
                     {% else %}
-                    <a href="/dashboard"><button>Dashboard</button></a>
+                    <a href="/dashboard">Dashboard</a>
                     {%endif %}
                 </li>
             </div>
         </ul>
     </nav>
-    <h1 align="center">Welcome!</h1>
     <p align="center">
         {% if not authorized %}
         <a href="/login"><button>Login with discord</button></a>

@@ -6,7 +6,8 @@ class IpcRoutes(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         if not hasattr(bot, "ipc"):
-            bot.ipc = ipc.Server(self.bot, secret_key=config.secret_key)
+            bot.ipc = ipc.Server(self.bot, host=config.host,
+                                 port=config.server_port, secret_key=config.secret_key)
             bot.ipc.start()
 
     async def on_ipc_ready(self):

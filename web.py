@@ -16,6 +16,8 @@ app.config["SECRET_KEY"] = config.secret_key
 app.config["DISCORD_CLIENT_ID"] = config.client_id
 app.config["DISCORD_CLIENT_SECRET"] = config.client_secret
 app.config["DISCORD_REDIRECT_URI"] = config.redirect_uri
+app.config["DEBUG"] = True
+app.config["TESTING"] = False
 
 discord = DiscordOAuth2Session(app)
 
@@ -76,7 +78,7 @@ async def dashboard_server(guild_id):
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     serve_config = Config()
-    serve_config.bind = [f"{config.public_ip}:443"]
+    serve_config.bind = [f"{config.public_ip}:80"]
     print(ipc_client)
     try:
         # `Client.start()` returns new Client instance or None if it fails to start

@@ -29,7 +29,8 @@ discord = DiscordOAuth2Session(app)
 
 @app.route("/")
 async def home():
-    return await render_template("index.html", authorized=await discord.authorized)
+    guild_count = (await app.ipc.request("get_guild_count"))['guild_count']
+    return await render_template("index.html", guild_count=guild_count, authorized=await discord.authorized)
 
 
 @app.route("/login")
@@ -52,7 +53,6 @@ async def dashboard():
     if not await discord.authorized:
         return redirect(url_for("login"))
 
-    guild_count = (await app.ipc.request("get_guild_count"))['guild_count']
     guild_ids = (await app.ipc.request("get_guild_ids"))['guilds']
 
     user_guilds = await discord.fetch_guilds()
@@ -66,7 +66,7 @@ async def dashboard():
 
     guilds.sort(key=lambda x: x.class_color == "red-border")
     name = (await discord.fetch_user()).name
-    return await render_template("dashboard.html", guild_count=guild_count, guilds=guilds, username=name)
+    return await render_template("dashboard.html",  guilds=guilds, username=name)
 
 
 @app.route("/dashboard/<int:guild_id>")

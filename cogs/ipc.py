@@ -31,7 +31,7 @@ class IpcRoutes(commands.Cog):
 
     @ipc.server.route()
     async def get_guild(self, data):
-        guild = self.get_guild(data.guild_id)
+        guild = self.bot.get_guild(data.guild_id)
         if guild is None:
             return None
 

@@ -1,6 +1,6 @@
 body {
     /* background-image: url("netero_thumbnail.jpg"); */
-    background-size: 40%;
+    background-size: 100%;
     color: rgb(53, 52, 52);
     font-family: cursive;
 }
@@ -13,7 +13,7 @@ h2 {
 .picker {
     margin: 2em;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
-    background-color: #23272a;
+    background-color: #da9f31;
     border-radius: 3px;
 }
 

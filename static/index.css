@@ -8,10 +8,12 @@ body {
 h1,
 h2 {
     text-align: center;
+    margin: 3em;
+    color: #da9f31;
 }
 
 .picker {
-    margin: 10em;
+    margin: 3em;
     box-shadow: 0 4px 8px 0 #da9f31;
     background-color: #353434;
     border-radius: 3px;

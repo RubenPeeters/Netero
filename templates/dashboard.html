@@ -10,35 +10,77 @@
         body {
             font-family: 'Roboto', sans-serif;
         }
+
+        nav div {
+            padding: 16px;
+        }
+
+        div a {
+            text-decoration: None;
+            color: inherit;
+            display: inline-block;
+            text-align: center;
+            padding: 14px;
+            font-size: 17px;
+            font-weight: bolder;
+        }
+
+        div a:hover {
+            text-decoration: underline;
+        }
+
+        .avatar {
+            vertical-align: middle;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        .left-nav {
+            flex: 1 1 600px;
+        }
     </style>
 
 </head>
 
-<body>
-    <nav class="navbar">
-        <!-- LOGO -->
-        <div class="logo">NETERO</div>
-        <!-- NAVIGATION MENU -->
-        <ul class="nav-links">
-            <!-- USING CHECKBOX HACK -->
-            <input type="checkbox" id="checkbox_toggle" />
-            <label for="checkbox_toggle" class="hamburger">&#9776;</label>
-            <!-- NAVIGATION MENUS -->
-            <div class="menu">
-                <li><a href="/">Home</a></li>
-                <li><a href="/">Docs</a></li>
-                <li><a
-                        href="https://discord.com/api/oauth2/authorize?client_id=988172257736142928&permissions=1644971949559&scope=applications.commands%20bot">Invite</a>
-                </li>
-                <li><a href="https://discord.com/invite/vbknFwz">Discord</a></li>
-                <li>{% if not authorized %}
-                    <a href="/login">Login</a>
-                    {% else %}
-                    <a href="/dashboard">Dashboard</a>
-                    {%endif %}
-                </li>
+<body
+    style="background-color: #202124; height: 100vh; max-height: 100vh; max-width: 67%; color: #da9f31; font-family: 'Roboto', sans-serif; margin: auto">
+    <nav style="
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-content: center;
+    justify-content: center;
+    align-items: center;
+    float: right;
+    top: 0;
+    width: 67%;
+    position: fixed;
+    background-color: #202124;">
+        <div style="display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-content: center;
+        justify-content: flex-start;
+        align-items: center;
+        float: left;
+        padding: 20px;" class="left-nav"><a href="/" style="font-size: 30px;"><img src="/static/netero_thumbnail.jpg"
+                    alt="Avatar" class="avatar"></a></div>
+        <div style="display: flex; float:left;" class="right-nav">
+            <div><a href="/">Commands</a></div>
+            <div><a
+                    href="https://discord.com/api/oauth2/authorize?client_id=988172257736142928&permissions=1644971949559&scope=applications.commands%20bot">Invite</a>
             </div>
-        </ul>
+            <div><a href="https://discord.com/invite/vbknFwz">Discord</a></div>
+            <div>
+                {% if not authorized %}
+                <a href="/login">Login</a>
+                {% else %}
+                <a href="/dashboard">Dashboard</a>
+                {%endif %}
+            </div>
     </nav>
 
 

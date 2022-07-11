@@ -2,65 +2,168 @@
 <html>
 
 <head>
-    <title>Netero home</title>
-    <link rel="stylesheet" href="static/index.css" />
+    <title>Netero</title>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
 
-        body {
-            font-family: 'Roboto', sans-serif;
+        nav div {
+            padding: 16px;
         }
 
-        button {
-            background-color: #4caf50;
-            /* Green */
-            border: none;
-            color: white;
-            padding: 15px 32px;
-            text-align: center;
-            text-decoration: none;
+        div a {
+            text-decoration: None;
+            color: inherit;
             display: inline-block;
-            font-size: 16px;
-            border-radius: 12px;
+            text-align: center;
+            padding: 14px;
+            font-size: 17px;
+            font-weight: bolder;
         }
 
-        button:hover {
-            transform: scale(1.1);
-            cursor: pointer;
+        div a:hover {
+            text-decoration: underline;
+        }
+
+        .avatar {
+            vertical-align: middle;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        .left-nav {
+            flex: 1 1 600px;
+        }
+
+        .card {
+            /* Add shadows to create the "card" effect */
+            box-shadow: 0 4px 8px 0 #da9f31;
+            transition: 0.3s;
+            margin: 0.5em;
+            display: grid;
+            grid-template-rows: 1fr 0.2fr;
+            justify-items: center;
+        }
+
+
+        /* On mouse-over, add a deeper shadow */
+        .card:hover {
+            box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        /* Add some padding inside the card container */
+        .container {
+            width: 160px;
+            height: 120px;
+            margin: 40px;
+        }
+
+        .cards {
+            color: #da9f31;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            justify-items: center;
+        }
+
+        h1,
+        h2 {
+            text-align: center;
+            margin: 3em;
+            color: #da9f31;
         }
     </style>
 
 </head>
 
-<body>
-    <nav class="navbar">
-        <!-- LOGO -->
-        <div class="logo">NETERO</div>
-        <!-- NAVIGATION MENU -->
-        <ul class="nav-links">
-            <!-- USING CHECKBOX HACK -->
-            <input type="checkbox" id="checkbox_toggle" />
-            <label for="checkbox_toggle" class="hamburger">&#9776;</label>
-            <!-- NAVIGATION MENUS -->
-            <div class="menu">
-                <li><a href="/">Home</a></li>
-                <li><a href="/">Docs</a></li>
-                <li><a
-                        href="https://discord.com/api/oauth2/authorize?client_id=988172257736142928&permissions=1644971949559&scope=applications.commands%20bot">Invite</a>
-                </li>
-                <li><a href="https://discord.com/invite/vbknFwz">Discord</a></li>
-                <li>{% if not authorized %}
-                    <a href="/login">Login</a>
-                    {% else %}
-                    <a href="/dashboard">Dashboard</a>
-                    {%endif %}
-                </li>
-            </div>
-        </ul>
-    </nav>
-    <h2> {{guild_count}} servers</h2>
+<body
+    style="background-color: #202124; height: 100vh; max-height: 100vh; max-width: 67%; color: #da9f31; font-family: 'Roboto', sans-serif; margin: auto">
 
+    <nav style="
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-content: center;
+    justify-content: center;
+    align-items: center;
+    float: right;
+    top: 0;
+    width: 67%;
+    position: fixed;
+    background-color: #202124;">
+        <div style="display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-content: center;
+        justify-content: flex-start;
+        align-items: center;
+        float: left;
+        padding: 20px;" class="left-nav"><a href="/" style="font-size: 30px;"><img src="/static/netero_thumbnail.jpg"
+                    alt="Avatar" class="avatar"></a></div>
+        <div style="display: flex; float:left;" class="right-nav">
+            <div><a href="/">Commands</a></div>
+            <div><a
+                    href="https://discord.com/api/oauth2/authorize?client_id=988172257736142928&permissions=1644971949559&scope=applications.commands%20bot">Invite</a>
+            </div>
+            <div><a href="https://discord.com/invite/vbknFwz">Discord</a></div>
+            <div>
+                {% if not authorized %}
+                <a href="/login">Login</a>
+                {% else %}
+                <a href="/dashboard">Dashboard</a>
+                {%endif %}
+            </div>
+    </nav>
+    <div style="margin-top: 200px">
+        <div style="max-width: 80%;  margin: 0 auto">
+            <h1>Netero: riot and anime utilities</h1>
+            <section class="cards">
+
+                <div class="card">
+                    <div class="container">
+                        <h3><b>Servers</b></h3>
+                        <p>{{guild_count}}</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="container">
+                        <h3><b>Users</b></h3>
+                        <p>{{user_count}}</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="container">
+                        <h3><b>Uptime</b></h3>
+                        <p id="timer"></p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+    <script>
+        var countDownDate = new Date("Jul 9, 2022 15:37:25").getTime();
+
+
+        var x = setInterval(function () {
+
+
+            var now = new Date().getTime();
+
+
+            var distance = countDownDate - now;
+
+
+            var days = Math.abs(Math.floor(distance / (1000 * 60 * 60 * 24)));
+            var hours = Math.abs(Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)));
+            var minutes = Math.abs(Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)));
+            var seconds = Math.abs(Math.floor((distance % (1000 * 60)) / 1000));
+            document.getElementById("timer").innerHTML = days + "d " + hours + "h "
+                + minutes + "m " + seconds + "s ";
+
+        }, 1000);
+    </script>
 </body>
 
 </html>

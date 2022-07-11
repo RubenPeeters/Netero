@@ -30,7 +30,8 @@ discord = DiscordOAuth2Session(app)
 @app.route("/")
 async def home():
     guild_count = (await app.ipc.request("get_guild_count"))['guild_count']
-    return await render_template("index.html", guild_count=guild_count, authorized=await discord.authorized)
+    user_count = (await app.ipc.request("get_user_count"))['user_count']
+    return await render_template("index.html", guild_count=guild_count, user_count=user_count, authorized=await discord.authorized)
 
 
 @app.route("/login")

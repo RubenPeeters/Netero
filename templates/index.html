@@ -40,18 +40,20 @@
 
         .card {
             /* Add shadows to create the "card" effect */
-            box-shadow: 0 4px 8px 0 #da9f31;
+            box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+
             transition: 0.3s;
             margin: 0.5em;
             display: grid;
             grid-template-rows: 1fr 0.2fr;
             justify-items: center;
+            background-color: #353434;
         }
 
 
         /* On mouse-over, add a deeper shadow */
         .card:hover {
-            box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 8px 0 #da9f31;
         }
 
         /* Add some padding inside the card container */
@@ -66,6 +68,7 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             justify-items: center;
+
         }
 
         h1,

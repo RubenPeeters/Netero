@@ -25,7 +25,7 @@ class IpcRoutes(commands.Cog):
 
     @ipc.server.route()
     async def get_user_count(self, data):
-        return {'user_count': len(self.bot.users)}
+        return {'user_count': sum(1 for _ in self.bot.get_all_members())}
 
     @ipc.server.route()
     async def get_guild_ids(self, data):

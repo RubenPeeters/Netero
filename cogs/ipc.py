@@ -49,6 +49,11 @@ class IpcRoutes(commands.Cog):
 
         return {'guild_data': guild_data}
 
+    @ipc.server.route()
+    async def get_start_time(self, data):
+
+        return {'start_time': str(self.bot.uptime)}
+
 
 async def setup(bot):
     await bot.add_cog(IpcRoutes(bot))

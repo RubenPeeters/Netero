@@ -21,7 +21,7 @@ class IpcRoutes(commands.Cog):
 
     @ipc.server.route()
     async def get_guild_count(self, data):
-        return {'guild_count': len(self.bot.guilds)}
+        return {'guild_count': len(self.bot.guilds) - len(self.bot.emote_servers)}
 
     @ipc.server.route()
     async def get_user_count(self, data):

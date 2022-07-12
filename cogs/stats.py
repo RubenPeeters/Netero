@@ -56,7 +56,7 @@ class Stats(commands.Cog):
 
             text = len(text_channels)
             voice = len(voice_channels)
-            payload = f'```fix\n{"Members":8}: {total_members}\n{"Channels":8}: {text + voice}\n{"Servers":8}: {str(len(self.bot.guilds))}\n{"Uptime":8}: {self.get_bot_uptime(brief=True)}```\n'
+            payload = f'```fix\n{"Members":8}: {total_members}\n{"Channels":8}: {text + voice}\n{"Servers":8}: {str(len(self.bot.guilds) - len(self.bot.emote_servers))}\n{"Uptime":8}: {self.get_bot_uptime(brief=True)}```\n'
             embed.set_thumbnail(
                 url='https://github.com/RubenPeeters/Netero/blob/main/cogs/assets/netero_thumbnail.jpg?raw=true')
             embed.add_field(

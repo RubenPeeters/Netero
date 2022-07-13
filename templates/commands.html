@@ -2,14 +2,10 @@
 <html>
 
 <head>
-    <title>Dashboard</title>
-    <!-- <link rel="stylesheet" href="static/index.css" /> -->
+    <title>Netero</title>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
-
-        body {
-            font-family: 'Roboto', sans-serif;
-        }
 
         nav div {
             padding: 16px;
@@ -42,52 +38,44 @@
             flex: 1 1 600px;
         }
 
-        .picker {
-            margin: 3em;
-            box-shadow: 0 4px 8px 0 #da9f31;
+        .card {
+            /* Add shadows to create the "card" effect */
+            box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+            transition: 0.3s;
+            margin: 0.5em;
+            display: grid;
+            grid-template-rows: 1fr 0.2fr;
+            justify-items: center;
             background-color: #353434;
-            border-radius: 3px;
+            text-align: center;
         }
 
-        .picker h3 {
-            text-align: center;
-            padding-top: 2%;
-            font-family: Georgia, "Times New Roman", Times, serif;
-            font-size: 1.5em;
-            color: #da9f31;
+
+        /* On mouse-over, add a deeper shadow */
+        .card:hover {
+            box-shadow: 0 4px 8px 0 #da9f31;
+        }
+
+        /* Add some padding inside the card container */
+        .container {
+            width: 160px;
+            height: 100px;
+            margin: 40px;
         }
 
         .cards {
             color: #da9f31;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             justify-items: center;
+
         }
 
-        .card {
-            margin: 0.5em;
-            display: grid;
-            grid-template-rows: 1fr 0.2fr;
-            justify-items: center;
-        }
-
-        .card:hover {
-            box-shadow: #0208141a 0px 0.35em 1.175em,
-                #02081414 0px 0.175em 0.5em;
-        }
-
-        .card img {
-            border-radius: 50%;
-            width: 7em;
-            height: 7em;
-        }
-
-        .green-border {
-            border: 4px solid rgb(106, 255, 170);
-        }
-
-        .red-border {
-            border: 4px solid rgb(255, 103, 90);
+        h1,
+        h2 {
+            text-align: center;
+            margin: 3em;
+            color: #da9f31;
         }
     </style>
 
@@ -95,6 +83,7 @@
 
 <body
     style="background-color: #202124; height: 100vh; max-height: 100vh; max-width: 67%; color: #da9f31; font-family: 'Roboto', sans-serif; margin: auto">
+
     <nav style="
     display: flex;
     flex-direction: row;
@@ -122,28 +111,43 @@
                     href="https://discord.com/api/oauth2/authorize?client_id=988172257736142928&permissions=1644971949559&scope=applications.commands%20bot">Invite</a>
             </div>
             <div><a href="https://discord.com/invite/vbknFwz">Discord</a></div>
+            <div>
+                {% if not authorized %}
+                <a href="/login">Login</a>
+                {% else %}
+                <a href="/dashboard">Dashboard</a>
+                {%endif %}
+            </div>
     </nav>
-
     <div style="margin-top: 200px">
-        <div class="picker">
-            <h3 style="margin-bottom: 25px;">Hello, {{username}}! Please select a server to get started</h3>
-            <section class="cards">
-                {% for guild in guilds %}
-                <div class="card">
-                    <a href="/dashboard/{{guild.id}}">
-                        {% if guild.icon_url is not none %}
-                        <img src="{{guild.icon_url}}" class="{{guild.class_color}}" />
-                        {% else %}
-                        <img src="/static/no-image-icon-23494.png" class="{{guild.class_color}}" />
-                        {% endif %}
-                    </a>
-                    <br />
-                    {{ guild.name }}
-                </div>
-                {% endfor %}
-            </section>
+        <div style="max-width: 80%;  margin: 0 auto">
+            <h1>Commands</h1>
+            <h2>Group</h2>
+            <h3>Command</h3>
+            <p>Explanation</p>
         </div>
     </div>
+    <script>
+        var countDownDate = new Date('{{ start_time }}').getTime();
+
+
+        var x = setInterval(function () {
+
+            var now = new Date().getTime();
+
+
+            var distance = countDownDate - now;
+
+
+            var days = Math.abs(Math.floor(distance / (1000 * 60 * 60 * 24))) - 1;
+            var hours = Math.abs(Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))) - 1;
+            var minutes = Math.abs(Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)));
+            var seconds = Math.abs(Math.floor((distance % (1000 * 60)) / 1000));
+            document.getElementById("timer").innerHTML = days + "d " + hours + "h "
+                + minutes + "m " + seconds + "s ";
+
+        }, 1000);
+    </script>
 </body>
 
 </html>

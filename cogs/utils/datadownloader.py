@@ -3,12 +3,12 @@ import os
 from pathlib import Path
 import requests
 
-VERSION = '12.12.1'
+VERSION = '12.13.1'
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 FOLDER = "static"
 FILES_PATH = os.path.join(dir_path, FOLDER, "league")
-print(FILES_PATH)
+# print(FILES_PATH)
 
 # redefine because of some import problems
 

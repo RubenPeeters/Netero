@@ -1,4 +1,5 @@
-from typing import Union
+from collections import Counter
+from typing import Any, Union
 import discord
 from discord import activity
 from discord.ext import commands, ipc
@@ -31,6 +32,11 @@ def _prefix_callable(bot: commands.Bot, msg: discord.Message):
 
 
 class Netero(commands.Bot):
+    pool: asyncpg.Pool
+    command_stats: Counter[str]
+    socket_stats: Counter[str]
+    gateway_handler: Any
+    bot_app_info: discord.AppInfo
 
     @property
     def config(self):

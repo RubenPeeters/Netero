@@ -1,22 +1,66 @@
+from __future__ import annotations
+import asyncio
+from collections import Counter
+import textwrap
+import traceback
+from typing import TYPE_CHECKING, Any, Optional, TypedDict
+from typing_extensions import Annotated
 
 from datetime import datetime
-from cogs.owner import MY_GUILD
+
+import asyncpg
 import discord
-from discord.ext import commands
-from discord import app_commands
+from discord.ext import commands, tasks, menus
 
 # system information
 import platform
-import re
-import uuid
-import socket
 import cpuinfo
 import psutil
+import logging
 
 # utils
-from .utils import time
+from .utils import time, db
 from .utils.embed import FooterEmbed
-from .views.button import TestButton
+
+if TYPE_CHECKING:
+    from .utils.context import Context
+
+
+log = logging.getLogger(__name__)
+
+
+class DataBatchEntry(TypedDict):
+    guild: Optional[int]
+    channel: int
+    author: int
+    used: str
+    prefix: str
+    command: str
+    failed: bool
+
+
+class GatewayHandler(logging.Handler):
+    def __init__(self, cog: Stats):
+        self.cog: Stats = cog
+        super().__init__(logging.INFO)
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        return record.name == 'discord.gateway' or 'Shard ID' in record.msg or 'Websocket closed ' in record.msg
+
+    def emit(self, record: logging.LogRecord) -> None:
+        self.cog.add_record(record)
+
+
+class Commands(db.Table):
+    id = db.PrimaryKeyColumn()
+
+    guild_id = db.Column(db.Integer(big=True), index=True)
+    channel_id = db.Column(db.Integer(big=True))
+    author_id = db.Column(db.Integer(big=True), index=True)
+    used = db.Column(db.Datetime, index=True)
+    prefix = db.Column(db.String)
+    command = db.Column(db.String, index=True)
+    failed = db.Column(db.Boolean, index=True)
 
 
 class Stats(commands.Cog):
@@ -24,27 +68,132 @@ class Stats(commands.Cog):
 
     def __init__(self, bot: commands.Bot) -> None:
         self.bot: commands.Bot = bot
+        self.process = psutil.Process()
+        self._batch_lock = asyncio.Lock()
+        self._data_batch: list[DataBatchEntry] = []
+        self.bulk_insert_loop.add_exception_type(
+            asyncpg.PostgresConnectionError)
+        self.bulk_insert_loop.start()
+        self._gateway_queue = asyncio.Queue()
+        self.gateway_worker.start()
 
     def get_bot_uptime(self, *, brief=False):
         return time.human_timedelta(self.bot.uptime, accuracy=None, brief=brief, suffix=False)
+
+    def cog_unload(self):
+        self.bulk_insert_loop.stop()
+        self.gateway_worker.cancel()
+
+    def add_record(self, record: logging.LogRecord) -> None:
+        self._gateway_queue.put_nowait(record)
+
+    async def notify_gateway_status(self, record: logging.LogRecord) -> None:
+        attributes = {'INFO': '\N{INFORMATION SOURCE}',
+                      'WARNING': '\N{WARNING SIGN}'}
+
+        emoji = attributes.get(record.levelname, '\N{CROSS MARK}')
+        dt = datetime.utcfromtimestamp(record.created)
+        msg = textwrap.shorten(
+            f'{emoji} [{time.format_dt(dt)}] `{record.message}`', width=1990)
+        await self.webhook.send(msg, username='Gateway', avatar_url='https://i.imgur.com/4PnCKB3.png')
+
+    async def bulk_insert(self) -> None:
+        query = """INSERT INTO commands (guild_id, channel_id, author_id, used, prefix, command, failed)
+                   SELECT x.guild, x.channel, x.author, x.used, x.prefix, x.command, x.failed
+                   FROM jsonb_to_recordset($1::jsonb) AS
+                   x(guild BIGINT, channel BIGINT, author BIGINT, used TIMESTAMP, prefix TEXT, command TEXT, failed BOOLEAN)
+                """
+
+        if self._data_batch:
+            await self.bot.pool.execute(query, self._data_batch)
+            total = len(self._data_batch)
+            if total > 1:
+                log.info('Registered %s commands to the database.', total)
+            self._data_batch.clear()
+
+    @discord.utils.cached_property
+    def webhook(self) -> discord.Webhook:
+        wh_id, wh_token = self.bot.config.stat_webhook
+        hook = discord.Webhook.partial(
+            id=wh_id, token=wh_token, session=self.bot.session)
+        return hook
+
+    @tasks.loop(seconds=10.0)
+    async def bulk_insert_loop(self):
+        async with self._batch_lock:
+            await self.bulk_insert()
+
+    @tasks.loop(seconds=0.0)
+    async def gateway_worker(self):
+        record = await self._gateway_queue.get()
+        await self.notify_gateway_status(record)
+
+    async def register_command(self, ctx: Context) -> None:
+        if ctx.command is None:
+            return
+
+        command = ctx.command.qualified_name
+        self.bot.command_stats[command] += 1
+        message = ctx.message
+        destination = None
+        if ctx.guild is None:
+            destination = 'Private Message'
+            guild_id = None
+        else:
+            destination = f'#{message.channel} ({message.guild})'
+            guild_id = ctx.guild.id
+
+        log.info(
+            f'{message.created_at}: {message.author} in {destination}: {message.content}')
+        async with self._batch_lock:
+            self._data_batch.append(
+                {
+                    'guild': guild_id,
+                    'channel': ctx.channel.id,
+                    'author': ctx.author.id,
+                    'used': message.created_at.isoformat(),
+                    'prefix': ctx.prefix,
+                    'command': command,
+                    'failed': ctx.command_failed,
+                }
+            )
+
+    @commands.Cog.listener()
+    async def on_command_completion(self, ctx: Context):
+        await self.register_command(ctx)
+
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx: Context, error: Exception) -> None:
+        await self.register_command(ctx)
+        if not isinstance(error, (commands.CommandInvokeError, commands.ConversionError)):
+            return
+
+        error = error.original
+        if isinstance(error, (discord.Forbidden, discord.NotFound, menus.MenuError)):
+            return
+
+        e = discord.Embed(title='Command Error', colour=0xCC3366)
+        e.add_field(name='Name', value=ctx.command.qualified_name)
+        e.add_field(name='Author', value=f'{ctx.author} (ID: {ctx.author.id})')
+
+        fmt = f'Channel: {ctx.channel} (ID: {ctx.channel.id})'
+        if ctx.guild:
+            fmt = f'{fmt}\nGuild: {ctx.guild} (ID: {ctx.guild.id})'
+
+        e.add_field(name='Location', value=fmt, inline=False)
+        e.add_field(name='Content', value=textwrap.shorten(
+            ctx.message.content, width=512))
+
+        exc = ''.join(traceback.format_exception(
+            type(error), error, error.__traceback__, chain=False))
+        e.description = f'```py\n{exc}\n```'
+        e.timestamp = discord.utils.utcnow()
+        await self.webhook.send(embed=e)
 
     @commands.hybrid_command(name="uptime")
     async def uptime(self, ctx):
         """Tells you how long the bot has been up for."""
         await ctx.reply(content=f'Uptime: **{self.get_bot_uptime()}**')
-
-    # @commands.hybrid_command(name="ui", hidden=True)
-    # async def ui(self, ctx):
-    #     """Discord UI testing."""
-    #     view = discord.ui.View()
-    #     button = TestButton(self.bot)
-    #     input = discord.ui.TextInput(label="Test input")
-    #     options = discord.SelectOption(label='Test 1', value='test-1')
-    #     select = discord.ui.Select(options=[options])
-    #     view.add_item(button)
-    #     # view.add_item(input)
-    #     # view.add_item(select)
-    #     await ctx.reply(content=f'Test message', view=view)
 
     @commands.hybrid_command(name="stats")
     async def stats(self, ctx):
@@ -207,5 +356,14 @@ class Stats(commands.Cog):
 
 
 async def setup(bot):
+    if not hasattr(bot, 'command_stats'):
+        bot.command_stats = Counter()
+
+    if not hasattr(bot, 'socket_stats'):
+        bot.socket_stats = Counter()
+
     cog = Stats(bot)
     await bot.add_cog(cog)
+
+    bot.gateway_handler = handler = GatewayHandler(cog)
+    logging.getLogger().addHandler(handler)

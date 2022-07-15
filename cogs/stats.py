@@ -7,7 +7,7 @@ import traceback
 from typing import TYPE_CHECKING, Any, Optional, TypedDict
 from typing_extensions import Annotated
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 import asyncpg
 import discord
@@ -24,7 +24,7 @@ from .utils import time, db
 from .utils.embed import FooterEmbed
 
 if TYPE_CHECKING:
-    from .utils.context import Context, GuildContext
+    from .utils.context import Context
 
 
 log = logging.getLogger(__name__)
@@ -396,7 +396,7 @@ class Stats(commands.Cog):
         cpm = total / minutes
         await ctx.send(f'{total} socket events observed ({cpm:.2f}/minute):\n{self.bot.socket_stats}')
 
-    async def show_guild_stats(self, ctx: GuildContext) -> None:
+    async def show_guild_stats(self, ctx, message) -> None:
         lookup = (
             '\N{FIRST PLACE MEDAL}',
             '\N{SECOND PLACE MEDAL}',
@@ -404,7 +404,6 @@ class Stats(commands.Cog):
             '\N{SPORTS MEDAL}',
             '\N{SPORTS MEDAL}',
         )
-
         embed = discord.Embed(title='Server Command Stats',
                               colour=self.bot.color)
 
@@ -415,10 +414,9 @@ class Stats(commands.Cog):
 
         embed.description = f'{count[0]} commands used.'
         if count[1]:
-            timestamp = count[1].replace(tzinfo=datetime.timezone.utc)
+            timestamp = count[1].replace(tzinfo=timezone.utc)
         else:
             timestamp = discord.utils.utcnow()
-
         embed.set_footer(
             text='Tracking command usage since').timestamp = timestamp
 
@@ -430,9 +428,7 @@ class Stats(commands.Cog):
                    ORDER BY "uses" DESC
                    LIMIT 5;
                 """
-
         records = await ctx.db.fetch(query, ctx.guild.id)
-
         value = (
             '\n'.join(f'{lookup[index]}: {command} ({uses} uses)' for (
                 index, (command, uses)) in enumerate(records))
@@ -450,9 +446,7 @@ class Stats(commands.Cog):
                    ORDER BY "uses" DESC
                    LIMIT 5;
                 """
-
         records = await ctx.db.fetch(query, ctx.guild.id)
-
         value = (
             '\n'.join(f'{lookup[index]}: {command} ({uses} uses)' for (
                 index, (command, uses)) in enumerate(records))
@@ -460,7 +454,6 @@ class Stats(commands.Cog):
         )
         embed.add_field(name='Top Commands Today', value=value, inline=True)
         embed.add_field(name='\u200b', value='\u200b', inline=True)
-
         query = """SELECT author_id,
                           COUNT(*) AS "uses"
                    FROM commands
@@ -469,7 +462,6 @@ class Stats(commands.Cog):
                    ORDER BY "uses" DESC
                    LIMIT 5;
                 """
-
         records = await ctx.db.fetch(query, ctx.guild.id)
 
         value = (
@@ -480,7 +472,6 @@ class Stats(commands.Cog):
         )
 
         embed.add_field(name='Top Command Users', value=value, inline=True)
-
         query = """SELECT author_id,
                           COUNT(*) AS "uses"
                    FROM commands
@@ -490,21 +481,18 @@ class Stats(commands.Cog):
                    ORDER BY "uses" DESC
                    LIMIT 5;
                 """
-
         records = await ctx.db.fetch(query, ctx.guild.id)
-
         value = (
             '\n'.join(
                 f'{lookup[index]}: <@!{author_id}> ({uses} bot uses)' for (index, (author_id, uses)) in enumerate(records)
             )
             or 'No command users.'
         )
-
         embed.add_field(name='Top Command Users Today',
                         value=value, inline=True)
-        await ctx.send(embed=embed)
+        await message.edit(embed=embed, content=None)
 
-    async def show_member_stats(self, ctx: GuildContext, member: discord.Member) -> None:
+    async def show_member_stats(self, ctx, member: discord.Member, message) -> None:
         lookup = (
             '\N{FIRST PLACE MEDAL}',
             '\N{SECOND PLACE MEDAL}',
@@ -512,7 +500,6 @@ class Stats(commands.Cog):
             '\N{SPORTS MEDAL}',
             '\N{SPORTS MEDAL}',
         )
-
         embed = discord.Embed(title='Command Stats', colour=member.colour)
         embed.set_author(name=str(member), icon_url=member.display_avatar.url)
 
@@ -520,13 +507,11 @@ class Stats(commands.Cog):
         query = "SELECT COUNT(*), MIN(used) FROM commands WHERE guild_id=$1 AND author_id=$2;"
         # type: ignore
         count: tuple[int, datetime.datetime] = await ctx.db.fetchrow(query, ctx.guild.id, member.id)
-
         embed.description = f'{count[0]} commands used.'
         if count[1]:
-            timestamp = count[1].replace(tzinfo=datetime.timezone.utc)
+            timestamp = count[1].replace(tzinfo=timezone.utc)
         else:
             timestamp = discord.utils.utcnow()
-
         embed.set_footer(text='First command used').timestamp = timestamp
 
         query = """SELECT command,
@@ -545,7 +530,6 @@ class Stats(commands.Cog):
                 index, (command, uses)) in enumerate(records))
             or 'No Commands'
         )
-
         embed.add_field(name='Most Used Commands', value=value, inline=False)
 
         query = """SELECT command,
@@ -569,25 +553,22 @@ class Stats(commands.Cog):
 
         embed.add_field(name='Most Used Commands Today',
                         value=value, inline=False)
-        await ctx.send(embed=embed)
+        await message.edit(embed=embed, content=None)
 
-    @commands.hybrid_command(invoke_without_command=True)
+    @commands.hybrid_command()
     @commands.guild_only()
-    @commands.cooldown(1, 30.0, type=commands.BucketType.member)
-    async def usage(self, ctx: GuildContext, *, member: discord.Member = None):
+    # @commands.cooldown(1, 30.0, type=commands.BucketType.member)
+    async def usages(self, ctx, *, member: discord.Member = None):
         """Tells you command usage stats for the server or a member."""
         message = await ctx.send(content='Just a moment...')
-        async with ctx.typing():
-            if member is None:
-                await message.delete()
-                await self.show_guild_stats(ctx)
-            else:
-                await message.delete()
-                await self.show_member_stats(ctx, member)
+        if member is None:
+            await self.show_guild_stats(ctx, message)
+        else:
+            await self.show_member_stats(ctx, member, message)
 
     @commands.hybrid_group(invoke_without_command=False)
     @commands.guild_only()
-    async def usage(self, ctx: GuildContext, *, member: discord.Member = None):
+    async def usage(self, ctx, *, member: discord.Member = None):
         """Tells you command usage stats for the server or a member."""
         return
 
@@ -597,9 +578,7 @@ class Stats(commands.Cog):
         """Global all time command statistics."""
         message = await ctx.send(content='Just a moment...')
         query = "SELECT COUNT(*) FROM commands;"
-        print('1')
         total: tuple[int] = await ctx.db.fetchrow(query)  # type: ignore
-        print('2')
         e = discord.Embed(title='Command Stats',
                           colour=self.bot.color)
         e.description = f'{total[0]} commands used.'
@@ -630,9 +609,7 @@ class Stats(commands.Cog):
                    ORDER BY "uses" DESC
                    LIMIT 5;
                 """
-        print('3')
         records = await ctx.db.fetch(query)
-        print('4')
         value = []
         for (index, (guild_id, uses)) in enumerate(records):
             if guild_id is None:
@@ -643,7 +620,6 @@ class Stats(commands.Cog):
 
             emoji = lookup[index]
             value.append(f'{emoji}: {guild} ({uses} uses)')
-        print('5')
         e.add_field(name='Top Guilds', value='\n'.join(value), inline=False)
 
         query = """SELECT author_id, COUNT(*) AS "uses"
@@ -652,10 +628,8 @@ class Stats(commands.Cog):
                    ORDER BY "uses" DESC
                    LIMIT 5;
                 """
-        print('6')
         records = await ctx.db.fetch(query)
         value = []
-        print('7')
         for (index, (author_id, uses)) in enumerate(records):
             user = self.censor_object(self.bot.get_user(
                 author_id) or f'<Unknown {author_id}>')

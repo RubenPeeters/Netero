@@ -51,7 +51,6 @@ class IpcRoutes(commands.Cog):
 
     @ipc.server.route()
     async def get_start_time(self, data):
-
         return {'start_time': str(self.bot.uptime)}
 
 

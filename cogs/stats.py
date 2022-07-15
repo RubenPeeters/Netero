@@ -1,6 +1,7 @@
 from __future__ import annotations
 import asyncio
 from collections import Counter
+import re
 import textwrap
 import traceback
 from typing import TYPE_CHECKING, Any, Optional, TypedDict
@@ -23,7 +24,7 @@ from .utils import time, db
 from .utils.embed import FooterEmbed
 
 if TYPE_CHECKING:
-    from .utils.context import Context
+    from .utils.context import Context, GuildContext
 
 
 log = logging.getLogger(__name__)
@@ -63,6 +64,14 @@ class Commands(db.Table):
     failed = db.Column(db.Boolean, index=True)
 
 
+_INVITE_REGEX = re.compile(
+    r'(?:https?:\/\/)?discord(?:\.gg|\.com|app\.com\/invite)?\/[A-Za-z0-9]+')
+
+
+def censor_invite(obj: Any, *, _regex=_INVITE_REGEX) -> str:
+    return _regex.sub('[censored-invite]', str(obj))
+
+
 class Stats(commands.Cog):
     """Statistics about the bot and its usage."""
 
@@ -86,6 +95,11 @@ class Stats(commands.Cog):
 
     def add_record(self, record: logging.LogRecord) -> None:
         self._gateway_queue.put_nowait(record)
+
+    def censor_object(self, obj: str | discord.abc.Snowflake) -> str:
+        if not isinstance(obj, str) and obj.id in self.bot.blacklist:
+            return '[censored]'
+        return censor_invite(obj)
 
     async def notify_gateway_status(self, record: logging.LogRecord) -> None:
         attributes = {'INFO': '\N{INFORMATION SOURCE}',
@@ -172,7 +186,7 @@ class Stats(commands.Cog):
         if isinstance(error, (discord.Forbidden, discord.NotFound, menus.MenuError)):
             return
 
-        e = discord.Embed(title='Command Error', colour=0xCC3366)
+        e = discord.Embed(title='Command Error', colour=self.bot.color)
         e.add_field(name='Name', value=ctx.command.qualified_name)
         e.add_field(name='Author', value=f'{ctx.author} (ID: {ctx.author.id})')
 
@@ -353,6 +367,409 @@ class Stats(commands.Cog):
         # print(f"Total Bytes Sent: {self.get_size(net_io.bytes_sent)}")
         # print(f"Total Bytes Received: {self.get_size(net_io.bytes_recv)}")
         return [system_embed, cpu_embed]
+
+    @commands.hybrid_command(hidden=True)
+    @commands.is_owner()
+    async def commandstats(self, ctx: Context, limit: int = 20):
+        """Shows command stats.
+        Use a negative number for bottom instead of top.
+        This is only for the current session.
+        """
+        counter = self.bot.command_stats
+        width = len(max(counter, key=len))
+        total = sum(counter.values())
+
+        if limit > 0:
+            common = counter.most_common(limit)
+        else:
+            common = counter.most_common()[limit:]
+
+        output = '\n'.join(f'{k:<{width}}: {c}' for k, c in common)
+
+        await ctx.send(f'```\n{output}\n```')
+
+    @commands.hybrid_command(hidden=True)
+    async def socketstats(self, ctx: Context):
+        delta = discord.utils.utcnow() - self.bot.uptime
+        minutes = delta.total_seconds() / 60
+        total = sum(self.bot.socket_stats.values())
+        cpm = total / minutes
+        await ctx.send(f'{total} socket events observed ({cpm:.2f}/minute):\n{self.bot.socket_stats}')
+
+    async def show_guild_stats(self, ctx: GuildContext) -> None:
+        lookup = (
+            '\N{FIRST PLACE MEDAL}',
+            '\N{SECOND PLACE MEDAL}',
+            '\N{THIRD PLACE MEDAL}',
+            '\N{SPORTS MEDAL}',
+            '\N{SPORTS MEDAL}',
+        )
+
+        embed = discord.Embed(title='Server Command Stats',
+                              colour=self.bot.color)
+
+        # total command uses
+        query = "SELECT COUNT(*), MIN(used) FROM commands WHERE guild_id=$1;"
+        # type: ignore
+        count: tuple[int, datetime.datetime] = await ctx.db.fetchrow(query, ctx.guild.id)
+
+        embed.description = f'{count[0]} commands used.'
+        if count[1]:
+            timestamp = count[1].replace(tzinfo=datetime.timezone.utc)
+        else:
+            timestamp = discord.utils.utcnow()
+
+        embed.set_footer(
+            text='Tracking command usage since').timestamp = timestamp
+
+        query = """SELECT command,
+                          COUNT(*) as "uses"
+                   FROM commands
+                   WHERE guild_id=$1
+                   GROUP BY command
+                   ORDER BY "uses" DESC
+                   LIMIT 5;
+                """
+
+        records = await ctx.db.fetch(query, ctx.guild.id)
+
+        value = (
+            '\n'.join(f'{lookup[index]}: {command} ({uses} uses)' for (
+                index, (command, uses)) in enumerate(records))
+            or 'No Commands'
+        )
+
+        embed.add_field(name='Top Commands', value=value, inline=True)
+
+        query = """SELECT command,
+                          COUNT(*) as "uses"
+                   FROM commands
+                   WHERE guild_id=$1
+                   AND used > (CURRENT_TIMESTAMP - INTERVAL '1 day')
+                   GROUP BY command
+                   ORDER BY "uses" DESC
+                   LIMIT 5;
+                """
+
+        records = await ctx.db.fetch(query, ctx.guild.id)
+
+        value = (
+            '\n'.join(f'{lookup[index]}: {command} ({uses} uses)' for (
+                index, (command, uses)) in enumerate(records))
+            or 'No Commands.'
+        )
+        embed.add_field(name='Top Commands Today', value=value, inline=True)
+        embed.add_field(name='\u200b', value='\u200b', inline=True)
+
+        query = """SELECT author_id,
+                          COUNT(*) AS "uses"
+                   FROM commands
+                   WHERE guild_id=$1
+                   GROUP BY author_id
+                   ORDER BY "uses" DESC
+                   LIMIT 5;
+                """
+
+        records = await ctx.db.fetch(query, ctx.guild.id)
+
+        value = (
+            '\n'.join(
+                f'{lookup[index]}: <@!{author_id}> ({uses} bot uses)' for (index, (author_id, uses)) in enumerate(records)
+            )
+            or 'No bot users.'
+        )
+
+        embed.add_field(name='Top Command Users', value=value, inline=True)
+
+        query = """SELECT author_id,
+                          COUNT(*) AS "uses"
+                   FROM commands
+                   WHERE guild_id=$1
+                   AND used > (CURRENT_TIMESTAMP - INTERVAL '1 day')
+                   GROUP BY author_id
+                   ORDER BY "uses" DESC
+                   LIMIT 5;
+                """
+
+        records = await ctx.db.fetch(query, ctx.guild.id)
+
+        value = (
+            '\n'.join(
+                f'{lookup[index]}: <@!{author_id}> ({uses} bot uses)' for (index, (author_id, uses)) in enumerate(records)
+            )
+            or 'No command users.'
+        )
+
+        embed.add_field(name='Top Command Users Today',
+                        value=value, inline=True)
+        await ctx.send(embed=embed)
+
+    async def show_member_stats(self, ctx: GuildContext, member: discord.Member) -> None:
+        lookup = (
+            '\N{FIRST PLACE MEDAL}',
+            '\N{SECOND PLACE MEDAL}',
+            '\N{THIRD PLACE MEDAL}',
+            '\N{SPORTS MEDAL}',
+            '\N{SPORTS MEDAL}',
+        )
+
+        embed = discord.Embed(title='Command Stats', colour=member.colour)
+        embed.set_author(name=str(member), icon_url=member.display_avatar.url)
+
+        # total command uses
+        query = "SELECT COUNT(*), MIN(used) FROM commands WHERE guild_id=$1 AND author_id=$2;"
+        # type: ignore
+        count: tuple[int, datetime.datetime] = await ctx.db.fetchrow(query, ctx.guild.id, member.id)
+
+        embed.description = f'{count[0]} commands used.'
+        if count[1]:
+            timestamp = count[1].replace(tzinfo=datetime.timezone.utc)
+        else:
+            timestamp = discord.utils.utcnow()
+
+        embed.set_footer(text='First command used').timestamp = timestamp
+
+        query = """SELECT command,
+                          COUNT(*) as "uses"
+                   FROM commands
+                   WHERE guild_id=$1 AND author_id=$2
+                   GROUP BY command
+                   ORDER BY "uses" DESC
+                   LIMIT 5;
+                """
+
+        records = await ctx.db.fetch(query, ctx.guild.id, member.id)
+
+        value = (
+            '\n'.join(f'{lookup[index]}: {command} ({uses} uses)' for (
+                index, (command, uses)) in enumerate(records))
+            or 'No Commands'
+        )
+
+        embed.add_field(name='Most Used Commands', value=value, inline=False)
+
+        query = """SELECT command,
+                          COUNT(*) as "uses"
+                   FROM commands
+                   WHERE guild_id=$1
+                   AND author_id=$2
+                   AND used > (CURRENT_TIMESTAMP - INTERVAL '1 day')
+                   GROUP BY command
+                   ORDER BY "uses" DESC
+                   LIMIT 5;
+                """
+
+        records = await ctx.db.fetch(query, ctx.guild.id, member.id)
+
+        value = (
+            '\n'.join(f'{lookup[index]}: {command} ({uses} uses)' for (
+                index, (command, uses)) in enumerate(records))
+            or 'No Commands'
+        )
+
+        embed.add_field(name='Most Used Commands Today',
+                        value=value, inline=False)
+        await ctx.send(embed=embed)
+
+    @commands.hybrid_command(invoke_without_command=True)
+    @commands.guild_only()
+    @commands.cooldown(1, 30.0, type=commands.BucketType.member)
+    async def usage(self, ctx: GuildContext, *, member: discord.Member = None):
+        """Tells you command usage stats for the server or a member."""
+        message = await ctx.send(content='Just a moment...')
+        async with ctx.typing():
+            if member is None:
+                await message.delete()
+                await self.show_guild_stats(ctx)
+            else:
+                await message.delete()
+                await self.show_member_stats(ctx, member)
+
+    @commands.hybrid_group(invoke_without_command=False)
+    @commands.guild_only()
+    async def usage(self, ctx: GuildContext, *, member: discord.Member = None):
+        """Tells you command usage stats for the server or a member."""
+        return
+
+    @usage.command(name='global')
+    @commands.is_owner()
+    async def stats_global(self, ctx: Context):
+        """Global all time command statistics."""
+        message = await ctx.send(content='Just a moment...')
+        query = "SELECT COUNT(*) FROM commands;"
+        print('1')
+        total: tuple[int] = await ctx.db.fetchrow(query)  # type: ignore
+        print('2')
+        e = discord.Embed(title='Command Stats',
+                          colour=self.bot.color)
+        e.description = f'{total[0]} commands used.'
+
+        lookup = (
+            '\N{FIRST PLACE MEDAL}',
+            '\N{SECOND PLACE MEDAL}',
+            '\N{THIRD PLACE MEDAL}',
+            '\N{SPORTS MEDAL}',
+            '\N{SPORTS MEDAL}',
+        )
+
+        query = """SELECT command, COUNT(*) AS "uses"
+                   FROM commands
+                   GROUP BY command
+                   ORDER BY "uses" DESC
+                   LIMIT 5;
+                """
+
+        records = await ctx.db.fetch(query)
+        value = '\n'.join(f'{lookup[index]}: {command} ({uses} uses)' for (
+            index, (command, uses)) in enumerate(records))
+        e.add_field(name='Top Commands', value=value, inline=False)
+
+        query = """SELECT guild_id, COUNT(*) AS "uses"
+                   FROM commands
+                   GROUP BY guild_id
+                   ORDER BY "uses" DESC
+                   LIMIT 5;
+                """
+        print('3')
+        records = await ctx.db.fetch(query)
+        print('4')
+        value = []
+        for (index, (guild_id, uses)) in enumerate(records):
+            if guild_id is None:
+                guild = 'Private Message'
+            else:
+                guild = self.censor_object(self.bot.get_guild(
+                    guild_id) or f'<Unknown {guild_id}>')
+
+            emoji = lookup[index]
+            value.append(f'{emoji}: {guild} ({uses} uses)')
+        print('5')
+        e.add_field(name='Top Guilds', value='\n'.join(value), inline=False)
+
+        query = """SELECT author_id, COUNT(*) AS "uses"
+                   FROM commands
+                   GROUP BY author_id
+                   ORDER BY "uses" DESC
+                   LIMIT 5;
+                """
+        print('6')
+        records = await ctx.db.fetch(query)
+        value = []
+        print('7')
+        for (index, (author_id, uses)) in enumerate(records):
+            user = self.censor_object(self.bot.get_user(
+                author_id) or f'<Unknown {author_id}>')
+            emoji = lookup[index]
+            value.append(f'{emoji}: {user} ({uses} uses)')
+
+        e.add_field(name='Top Users', value='\n'.join(value), inline=False)
+        await message.edit(embed=e, content=None)
+
+    @usage.command(name='today')
+    @commands.is_owner()
+    async def stats_today(self, ctx: Context):
+        """Global command statistics for the day."""
+        message = await ctx.send(content='Just a moment...')
+        query = "SELECT failed, COUNT(*) FROM commands WHERE used > (CURRENT_TIMESTAMP - INTERVAL '1 day') GROUP BY failed;"
+        total = await ctx.db.fetch(query)
+        failed = 0
+        success = 0
+        question = 0
+        for state, count in total:
+            if state is False:
+                success += count
+            elif state is True:
+                failed += count
+            else:
+                question += count
+
+        e = discord.Embed(title='Last 24 Hour Command Stats',
+                          colour=self.bot.color)
+        e.description = (
+            f'{failed + success + question} commands used today. '
+            f'({success} succeeded, {failed} failed, {question} unknown)'
+        )
+
+        lookup = (
+            '\N{FIRST PLACE MEDAL}',
+            '\N{SECOND PLACE MEDAL}',
+            '\N{THIRD PLACE MEDAL}',
+            '\N{SPORTS MEDAL}',
+            '\N{SPORTS MEDAL}',
+        )
+
+        query = """SELECT command, COUNT(*) AS "uses"
+                   FROM commands
+                   WHERE used > (CURRENT_TIMESTAMP - INTERVAL '1 day')
+                   GROUP BY command
+                   ORDER BY "uses" DESC
+                   LIMIT 5;
+                """
+
+        records = await ctx.db.fetch(query)
+        value = '\n'.join(f'{lookup[index]}: {command} ({uses} uses)' for (
+            index, (command, uses)) in enumerate(records))
+        e.add_field(name='Top Commands', value=value, inline=False)
+
+        query = """SELECT guild_id, COUNT(*) AS "uses"
+                   FROM commands
+                   WHERE used > (CURRENT_TIMESTAMP - INTERVAL '1 day')
+                   GROUP BY guild_id
+                   ORDER BY "uses" DESC
+                   LIMIT 5;
+                """
+
+        records = await ctx.db.fetch(query)
+        value = []
+        for (index, (guild_id, uses)) in enumerate(records):
+            if guild_id is None:
+                guild = 'Private Message'
+            else:
+                guild = self.censor_object(self.bot.get_guild(
+                    guild_id) or f'<Unknown {guild_id}>')
+            emoji = lookup[index]
+            value.append(f'{emoji}: {guild} ({uses} uses)')
+
+        e.add_field(name='Top Guilds', value='\n'.join(value), inline=False)
+
+        query = """SELECT author_id, COUNT(*) AS "uses"
+                   FROM commands
+                   WHERE used > (CURRENT_TIMESTAMP - INTERVAL '1 day')
+                   GROUP BY author_id
+                   ORDER BY "uses" DESC
+                   LIMIT 5;
+                """
+
+        records = await ctx.db.fetch(query)
+        value = []
+        for (index, (author_id, uses)) in enumerate(records):
+            user = self.censor_object(self.bot.get_user(
+                author_id) or f'<Unknown {author_id}>')
+            emoji = lookup[index]
+            value.append(f'{emoji}: {user} ({uses} uses)')
+
+        e.add_field(name='Top Users', value='\n'.join(value), inline=False)
+        await message.edit(embed=e, content=None)
+
+    async def send_guild_stats(self, e: discord.Embed, guild: discord.Guild):
+        e.add_field(name='Name', value=guild.name)
+        e.add_field(name='ID', value=guild.id)
+        e.add_field(name='Shard ID', value=guild.shard_id or 'N/A')
+        e.add_field(
+            name='Owner', value=f'{guild.owner} (ID: {guild.owner_id})')
+
+        bots = sum(m.bot for m in guild.members)
+        total = guild.member_count or 1
+        e.add_field(name='Members', value=str(total))
+        e.add_field(name='Bots', value=f'{bots} ({bots/total:.2%})')
+
+        if guild.icon:
+            e.set_thumbnail(url=guild.icon.url)
+
+        if guild.me:
+            e.timestamp = guild.me.joined_at
+
+        await self.webhook.send(embed=e)
 
 
 async def setup(bot):

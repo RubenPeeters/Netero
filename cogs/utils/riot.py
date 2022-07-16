@@ -89,8 +89,8 @@ async def get_ranks(name: str, region: str):
         solo_winrate = 'not enough games played'
         flex_rank = 'Unranked'
         flex_winrate = 'not enough games played'
-        solo_LP = None
-        flex_LP = None
+        solo_LP = "0"
+        flex_LP = "0"
         flex_winrate_compact = None
         solo_winrate_compact = None
         for league in leagues:
@@ -141,12 +141,15 @@ async def to_embed(name: str, region: str, data: StaticData, ctx) -> discord.Emb
             match_info = f'Currently playing {queue} as {champ_emote} {champ_name}.'
         else:
             match_info = 'Currently not in game.'
+        solo_rank_emote = get_emote_strings(solo_rank.split(" ")[0], ctx.bot)
+        flex_rank_emote = get_emote_strings(flex_rank.split(" ")[0], ctx.bot)
+        print(solo_rank_emote)
         embed = discord.Embed(
             title=f'{summoner.name}', color=ctx.bot.color)
         embed.add_field(name='Solo/duo rank',
-                        value=f'{solo_rank} - {solo_winrate}', inline=False)
+                        value=f'{solo_rank_emote} {solo_rank} - {solo_winrate}', inline=False)
         embed.add_field(
-            name='Flex rank', value=f'{flex_rank} - {flex_winrate}', inline=False)
+            name='Flex rank', value=f'{flex_rank_emote} {flex_rank} - {flex_winrate}', inline=False)
         embed.add_field(name='Level',
                         value=summoner.level, inline=False)
         embed.add_field(name='LIVE', value=match_info)
@@ -191,6 +194,7 @@ async def match_to_embed(name: str, region: str, data: StaticData, ctx) -> disco
         ss1_name = get_ss_from_id(participant.spell_ids[0], data=data)
         ss2_name = get_ss_from_id(participant.spell_ids[1], data=data)
         champ_emote = get_emote_strings(champ_id, ctx.bot)
+        solo_rank_emote = get_emote_strings(solo_rank.split(" ")[0], ctx.bot)
         ss1_emote = get_emote_strings(ss1_name, ctx.bot)
         ss2_emote = get_emote_strings(ss2_name, ctx.bot)
         if participant.team_id == 100:
@@ -199,14 +203,14 @@ async def match_to_embed(name: str, region: str, data: StaticData, ctx) -> disco
             else:
                 team1 += f"{champ_emote} {participant.summoner_name}\n"
             ssteam1 += "\t{} {}\n".format(ss1_emote, ss2_emote)
-            rankteam1 += f"{solo_rank} ({solo_LP} LP)\n"
+            rankteam1 += f"{solo_rank_emote} {solo_rank} ({solo_LP} LP)\n"
         else:
             if participant.summoner_name == summoner.name:
                 team2 += f"{champ_emote} **{participant.summoner_name}**\n"
             else:
                 team2 += f"{champ_emote} {participant.summoner_name}\n"
             ssteam2 += "\t{} {}\n".format(ss1_emote, ss2_emote)
-            rankteam2 += f"{solo_rank} ({solo_LP} LP)\n"
+            rankteam2 += f"{solo_rank_emote} {solo_rank} ({solo_LP} LP)\n"
     for i, bans in enumerate(game.banned_champions):
         ban_champ_id = get_champ_from_id(bans.champion_id, data=data)
         ban_champ_emote = get_emote_strings(ban_champ_id, ctx.bot)

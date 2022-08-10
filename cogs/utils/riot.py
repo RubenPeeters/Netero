@@ -264,7 +264,6 @@ async def get_match_ids(name: str, platform: str, queue: int):
         ).query(
             count=100,
             start_time=datetime.now() - timedelta(days=200),
-            queue=None
         ).get()
     except Exception as e:
         print(str(e))
@@ -273,11 +272,11 @@ async def get_match_ids(name: str, platform: str, queue: int):
 
 
 def verify_region(region: str):
-    if region.lower() not in INPUT_TO_PLATFORM.keys() and region not in PLATFORMS:
+    if region.lower() not in INPUT_TO_PLATFORM.keys() and region.lower() not in PLATFORMS:
         raise RegionException(region, list(
             INPUT_TO_PLATFORM.keys()))
     if region.lower() in INPUT_TO_PLATFORM.keys():
-        return INPUT_TO_PLATFORM[region]
+        return INPUT_TO_PLATFORM[region.lower()]
     else:
         return region.lower()
 

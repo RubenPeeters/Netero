@@ -89,10 +89,10 @@ if __name__ == '__main__':
     print(ipc_client)
     try:
         # `Client.start()` returns new Client instance or None if it fails to start
-        print('start app ipc')
+        log.info('start app ipc')
         app.ipc = loop.run_until_complete(
             ipc_client.start(loop=loop, logger=log))
-        print('start serving')
+        log.info('start serving')
         loop.run_until_complete(serve(app, serve_config))
     finally:
         # Closes the session, doesn't close the loop

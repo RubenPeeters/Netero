@@ -100,6 +100,13 @@ class League(commands.Cog):
     @league.command(name="history")
     async def history(self, ctx, region: str, *, name: str):
         """Shows the last 10 games played by a summoner"""
+        queue_dict = {
+            420: 'soloq',
+            None: 'all',
+            400: 'normal draft',
+            440: 'ranked flex',
+            325: 'ARAM'
+        }
         message = await ctx.send(embed=self.waiting_embed)
         try:
             region = riot.verify_region(region)
@@ -107,8 +114,9 @@ class League(commands.Cog):
             await message.edit(content=str(err), embed=None)
             return
         try:
-            matches = await riot.get_match_ids(name, region)
-        except:
+            matches = await riot.get_match_ids(name, region, 420)
+        except Exception as err:
+            print(str(err))
             await message.edit(content='No summoner with that name found.', embed=None)
             return
         try:

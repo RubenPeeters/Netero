@@ -255,7 +255,7 @@ def get_ss_from_id(id: int, data: StaticData):
     return None
 
 
-async def get_match_ids(name: str, platform: str):
+async def get_match_ids(name: str, platform: str, queue: int):
     try:
         summoner = await lol.Summoner(name=name, platform=platform).get()
         match_history = await lol.MatchHistory(
@@ -263,21 +263,23 @@ async def get_match_ids(name: str, platform: str):
             region=platform_to_region(summoner.platform)
         ).query(
             count=100,
-            start_time=datetime.now() - timedelta(days=200)
+            start_time=datetime.now() - timedelta(days=200),
+            queue=None
         ).get()
     except Exception as e:
         print(str(e))
+        return
     return match_history.ids
 
 
 def verify_region(region: str):
-    if region not in INPUT_TO_PLATFORM.keys() and region not in PLATFORMS:
+    if region.lower() not in INPUT_TO_PLATFORM.keys() and region not in PLATFORMS:
         raise RegionException(region, list(
             INPUT_TO_PLATFORM.keys()))
-    if region in INPUT_TO_PLATFORM.keys():
+    if region.lower() in INPUT_TO_PLATFORM.keys():
         return INPUT_TO_PLATFORM[region]
     else:
-        return region
+        return region.lower()
 
 
 async def history_to_embed(ctx, name: str, matches: List[int], data: StaticData, count: int = 10) -> discord.Embed():
@@ -299,9 +301,10 @@ async def history_to_embed(ctx, name: str, matches: List[int], data: StaticData,
                         queue = entry['description']
                 if participant.win:
                     wins += 1
-                queue = queue.replace('5v5', '')
-                queue = queue.replace('games', '')
-                queue = queue.strip()
+                if queue:
+                    queue = queue.replace('5v5', '')
+                    queue = queue.replace('games', '')
+                    queue = queue.strip()
                 if participant.deaths != 0:
                     payload += f"{'🔵' if participant.win else '🔴'} : {get_emote_strings(participant.champion_name, ctx.bot)} **{participant.kills}/{participant.deaths}/{participant.assists}** {queue} **{float(participant.kills + participant.assists)/participant.deaths:.2f}** KDA \n"
                 else:
